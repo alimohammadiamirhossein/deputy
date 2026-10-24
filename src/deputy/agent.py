@@ -103,15 +103,29 @@ REVIEW_HEADER = (
 )
 DEFAULT_REVIEW_LENSES = ["correctness and logic bugs", "edge cases, error handling and missing tests"]
 
-# When a capped run stops early, one last call without tools or thinking asks for the write-up.
+# When a capped run stops early, one last call without tools asks for the write-up. It thinks a
+# little: with thinking off, a reviewer reasons in its answer and leaves retracted findings in it.
 WRAP_UP = ("Stop here: you reached the {reason} for this pass. Do not call any tools. Write your "
            "final message now, in the required format, using only what you have already checked. "
            "End with a line NOT CHECKED: listing what you did not get to, or \"none\".")
+# A reviewer cut off mid-check otherwise reports its open suspicions as findings (benchmark: every
+# cut-off lens on a clean diff raised a major false alarm), so only confirmed problems count.
+REVIEW_WRAP_UP = (
+    "Stop here: you reached the {reason} for this pass. Do not call any tools.\n"
+    "Before you write, sort every point you have into one of two groups:\n"
+    "- CONFIRMED: you read the exact lines involved and can name an input that goes wrong.\n"
+    "- UNCONFIRMED: anything else, including suspicions you had not finished checking and code "
+    "you did not read.\n"
+    "Only CONFIRMED points are findings; write them in the required format. UNCONFIRMED points are "
+    "never findings: give them no severity and no finding block. If nothing is CONFIRMED, answer "
+    "VERDICT: approve. End with a line NOT CHECKED: followed by one line per UNCONFIRMED point, "
+    "or \"none\".")
 WRAP_UP_REASONS = {"time_limit": "time limit", "timeout": "time limit",
                    "output_limit": "thinking budget", "truncated": "length limit",
                    "max_turns": "turn limit", "budget": "token budget"}
-WRAP_UP_TOKENS = 4_000
-WRAP_UP_SECONDS = 90
+WRAP_UP_EFFORT = "low"
+WRAP_UP_TOKENS = 6_000
+WRAP_UP_SECONDS = 120
 MIN_TURN_TOKENS = 256  # below this, a turn could not say anything useful
 
 
@@ -297,7 +311,7 @@ def run_agent(
 ) -> RunResult:
     """Run the tool loop. `time_limit` (seconds) and `output_limit` (output tokens, thinking
     included) cap this run below the global limits. With `wrap_up`, a run that stops early gets
-    one last call, without tools or thinking, to write up what it already checked."""
+    one last call, without tools and with light thinking, to write up what it already checked."""
     if not task or not task.strip():
         raise DeputyError("task must not be empty")
     effort = effort or settings.effort
@@ -385,7 +399,8 @@ def run_agent(
             final = content  # keep the latest commentary in case the run stops early
 
     if wrap_up and status != "completed":
-        final = _wrap_up(client, settings, messages, tool_schemas, status, usage) or final
+        prompt = REVIEW_WRAP_UP if mode == "review" else WRAP_UP
+        final = _wrap_up(client, settings, messages, tool_schemas, status, usage, prompt) or final
 
     result = RunResult(
         mode=mode, status=status, final_message=final, turns=turns,
@@ -397,11 +412,11 @@ def run_agent(
 
 
 def _wrap_up(client: Any, settings: Settings, messages: list[dict], tool_schemas: list[dict],
-             status: str, usage: Usage) -> str | None:
+             status: str, usage: Usage, prompt: str = WRAP_UP) -> str | None:
     """Ask a run that stopped early for its final message. Returns None if that fails too."""
     reason = WRAP_UP_REASONS.get(status, "limit")
-    messages.append({"role": "user", "content": WRAP_UP.format(reason=reason)})
-    request = build_request(settings, "none", messages, tool_schemas)
+    messages.append({"role": "user", "content": prompt.format(reason=reason)})
+    request = build_request(settings, WRAP_UP_EFFORT, messages, tool_schemas)
     request["max_tokens"] = WRAP_UP_TOKENS
     if tool_schemas:
         request["tool_choice"] = "none"

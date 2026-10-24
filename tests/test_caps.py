@@ -75,9 +75,18 @@ def test_output_budget_shrinks_each_request_then_wraps_up(project: Path):
     assert result.status == "output_limit" and result.usage.requests == 3
     assert result.final_message.startswith("VERDICT: approve")
     last = client.requests[-1]
-    assert last["tool_choice"] == "none" and last["reasoning_effort"] == "none"
-    assert "Stop here" in last["messages"][-1]["content"]
-    assert "thinking budget" in last["messages"][-1]["content"]
+    assert last["tool_choice"] == "none" and last["reasoning_effort"] == "low"
+    prompt = last["messages"][-1]["content"]
+    assert "Stop here" in prompt and "thinking budget" in prompt
+    # A cut-off reviewer may report only confirmed problems; the rest goes under NOT CHECKED.
+    assert "Only CONFIRMED points are findings" in prompt and "NOT CHECKED:" in prompt
+
+
+def test_consult_wrap_up_keeps_the_plain_prompt(project: Path):
+    client = FakeClient([list_files(completion=950), reply("1. IDEA: cache it")])
+    run_agent("ideas?", capped(project), client, mode="consult", output_limit=1_000, wrap_up=True)
+    prompt = client.requests[-1]["messages"][-1]["content"]
+    assert "Stop here" in prompt and "CONFIRMED" not in prompt
 
 
 def test_response_cut_by_the_budget_counts_as_output_limit(project: Path):

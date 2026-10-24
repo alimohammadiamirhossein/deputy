@@ -37,9 +37,10 @@ Everything that is not in the [README](../README.md). For how Claude should use 
   untracked files; with `base` it compares against that revision.
 - `consult` and `review` run one independent pass per lens, in parallel. Each lens stops after
   `DEPUTY_LENS_TIMEOUT` seconds or `DEPUTY_LENS_MAX_OUTPUT_TOKENS` output tokens (thinking
-  included), whichever comes first. It then gets one short call, without tools or thinking, to
-  write up what it already checked; its section is marked as stopped early and ends with a
-  `NOT CHECKED:` line.
+  included), whichever comes first. It then gets one short call, without tools and with light
+  thinking, to write up what it already checked; its section is marked as stopped early and
+  ends with a `NOT CHECKED:` line. A reviewer stopped this way reports only problems it
+  confirmed and lists open suspicions under `NOT CHECKED:` instead.
 - `my_view` is never sent to the model; it is echoed back so Claude can compare honestly.
 
 Plugin slash commands: `/deputy:consult`, `/deputy:review`, `/deputy:investigate`,
