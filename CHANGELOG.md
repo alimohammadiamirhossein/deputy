@@ -7,6 +7,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Grok (xAI) as a provider.** `DEPUTY_PROVIDER=xai` (or `grok`) with `XAI_API_KEY` uses
+  `grok-4.3` by default; `grok-build-0.1` and `grok-4.7` are priced too. Deputy sends
+  `max_completion_tokens`, maps thinking levels to xAI's (and leaves them out for models with
+  fixed reasoning), and adds an `x-grok-conv-id` header per run for prompt caching.
+  `deputy setup cursor|codex --provider xai` writes a config that forwards only `XAI_API_KEY`.
+  Tested against xAI's documentation, not yet with a live key.
 - **Two new modes.** `lean` spends as few Claude tokens as possible with little loss of
   accuracy: Deputy does the reading (`investigate`) and well-specified work big enough to pay
   off, and Claude writes small and tricky changes itself. `partner` hands Deputy every
@@ -25,6 +31,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- A provider's own key variable is now only sent to that provider's host. Before, a custom
+  `DEPUTY_BASE_URL` could receive `DEEPINFRA_API_KEY`; such endpoints now need `DEPUTY_API_KEY`.
+  `XAI_*` variables are also hidden from shell commands Deputy runs.
 - The MCP `initialize` handshake now reports Deputy's version instead of the MCP SDK's
   ([#4](https://github.com/alimohammadiamirhossein/deputy/pull/4), fixes
   [#1](https://github.com/alimohammadiamirhossein/deputy/issues/1)).

@@ -2,7 +2,7 @@
 
 Existing config files are backed up before they change, and an existing "deputy" entry is never
 overwritten unless --force is given. API keys are never written to config files: the editor
-forwards DEEPINFRA_API_KEY from your environment.
+forwards the provider's key (DEEPINFRA_API_KEY, or XAI_API_KEY for Grok) from your environment.
 """
 from __future__ import annotations
 
@@ -11,13 +11,21 @@ import os
 import shutil
 from pathlib import Path
 
-from .config import DEFAULT_MODE, MODES
+from .config import DEFAULT_MODE, DEFAULT_PROVIDER, MODES, PROVIDER_ALIASES, PROVIDERS
 
 GIT_SOURCE = "git+https://github.com/alimohammadiamirhossein/deputy"
 PYPI_PACKAGE = "deputy-cc"
-FORWARDED_ENV = ["DEEPINFRA_API_KEY", "DEPUTY_API_KEY", "DEPUTY_THINKING", "DEPUTY_LEAD_MODEL"]
+# Per provider: the key variable, the model named in the rules, and the variables the editor
+# passes through. For xAI only XAI_API_KEY is passed, never DEPUTY_API_KEY or the DeepInfra key,
+# so a key meant for DeepInfra cannot reach xAI.
+KEY_VAR = {"deepinfra": "DEEPINFRA_API_KEY", "xai": "XAI_API_KEY"}
+MODEL_NAME = {"deepinfra": "DeepSeek V4.1 Flash", "xai": "Grok"}
+FORWARDED_ENV = {
+    "deepinfra": ["DEEPINFRA_API_KEY", "DEPUTY_API_KEY", "DEPUTY_THINKING", "DEPUTY_LEAD_MODEL"],
+    "xai": ["XAI_API_KEY", "DEPUTY_THINKING", "DEPUTY_MODEL", "DEPUTY_LEAD_MODEL"],
+}
 
-RULES_TEMPLATE = """You can call Deputy, an MCP server that runs a cheaper model (DeepSeek V4.1 Flash) as
+RULES_TEMPLATE = """You can call Deputy, an MCP server that runs a cheaper model ({model_name}) as
 a helper in this project. You are the lead: you plan, decide, write the important code and verify.
 Deputy's output is never proof; check it against the code before relying on it.
 
@@ -60,10 +68,18 @@ def server_command(pypi: bool = False) -> tuple[str, list[str]]:
     return "uvx", ["--from", GIT_SOURCE, "deputy", "serve"]
 
 
-def agent_rules(mode: str = DEFAULT_MODE) -> str:
+def provider_name(provider: str) -> str:
+    name = PROVIDER_ALIASES.get(provider.lower(), provider.lower())
+    if name not in PROVIDERS:
+        raise SetupError(f"provider must be one of {', '.join([*PROVIDERS, *PROVIDER_ALIASES])}")
+    return name
+
+
+def agent_rules(mode: str = DEFAULT_MODE, provider: str = DEFAULT_PROVIDER) -> str:
     if mode not in MODES:
         raise SetupError(f"mode must be one of {', '.join(MODES)}")
-    return RULES_TEMPLATE.format(delegate_rule=DELEGATE_RULES[mode])
+    return RULES_TEMPLATE.format(delegate_rule=DELEGATE_RULES[mode],
+                                 model_name=MODEL_NAME[provider_name(provider)])
 
 
 def _backup(path: Path) -> Path | None:
@@ -85,9 +101,14 @@ def _write_new(path: Path, content: str, force: bool) -> str:
 
 # --------------------------------------------------------------------------- Cursor
 
-def cursor_entry(project: bool, pypi: bool = False, mode: str = DEFAULT_MODE) -> dict:
+def cursor_entry(project: bool, pypi: bool = False, mode: str = DEFAULT_MODE,
+                 provider: str = DEFAULT_PROVIDER) -> dict:
     command, args = server_command(pypi)
-    env = {"DEEPINFRA_API_KEY": "${env:DEEPINFRA_API_KEY}", "DEPUTY_MODE": mode}
+    provider = provider_name(provider)
+    key = KEY_VAR[provider]
+    env = {key: f"${{env:{key}}}", "DEPUTY_MODE": mode}
+    if provider != DEFAULT_PROVIDER:
+        env["DEPUTY_PROVIDER"] = provider
     if project:
         # ${workspaceFolder} is the folder that contains .cursor/mcp.json.
         env["DEPUTY_WORKSPACE"] = "${workspaceFolder}"
@@ -95,12 +116,14 @@ def cursor_entry(project: bool, pypi: bool = False, mode: str = DEFAULT_MODE) ->
 
 
 def setup_cursor(project_dir: Path | None = None, pypi: bool = False, mode: str = DEFAULT_MODE,
-                 force: bool = False, dry_run: bool = False) -> list[str]:
+                 force: bool = False, dry_run: bool = False,
+                 provider: str = DEFAULT_PROVIDER) -> list[str]:
     """Add Deputy to ~/.cursor/mcp.json, or to <project>/.cursor/mcp.json plus a project rule."""
-    agent_rules(mode)  # validates the mode
+    provider = provider_name(provider)
+    agent_rules(mode, provider)  # validates the mode
     base = project_dir.resolve() if project_dir else Path.home()
     config = base / ".cursor" / "mcp.json"
-    entry = cursor_entry(project_dir is not None, pypi, mode)
+    entry = cursor_entry(project_dir is not None, pypi, mode, provider)
     data: dict = {}
     if config.exists():
         try:
@@ -124,7 +147,7 @@ def setup_cursor(project_dir: Path | None = None, pypi: bool = False, mode: str 
             notes.append(f"updated {config}" + (f" (backup: {backup.name})" if backup else ""))
 
     rule = ("---\ndescription: When and how to use the Deputy MCP tools (consult, review, "
-            "investigate, delegate, stats)\nalwaysApply: false\n---\n\n" + agent_rules(mode))
+            "investigate, delegate, stats)\nalwaysApply: false\n---\n\n" + agent_rules(mode, provider))
     if project_dir:
         target = base / ".cursor" / "rules" / "deputy.mdc"
         notes.append(f"would write {target}" if dry_run else _write_new(target, rule, force))
@@ -132,21 +155,26 @@ def setup_cursor(project_dir: Path | None = None, pypi: bool = False, mode: str 
         notes.append("Cursor has no global rules file: run `deputy setup cursor --project <dir>` "
                      "to add the Deputy rule to a project, or paste `deputy setup rules` into "
                      "Cursor Settings > Rules.")
-    notes.append("Make sure DEEPINFRA_API_KEY is set in your environment, then restart Cursor.")
+    notes.append(f"Make sure {KEY_VAR[provider]} is set in your environment, then restart Cursor.")
     return notes
 
 
 # ---------------------------------------------------------------------------- Codex
 
-def codex_block(pypi: bool = False, mode: str = DEFAULT_MODE) -> str:
+def codex_block(pypi: bool = False, mode: str = DEFAULT_MODE,
+                provider: str = DEFAULT_PROVIDER) -> str:
     command, args = server_command(pypi)
+    provider = provider_name(provider)
     quoted = ", ".join(json.dumps(a) for a in args)
-    forwarded = ", ".join(json.dumps(v) for v in FORWARDED_ENV)
+    forwarded = ", ".join(json.dumps(v) for v in FORWARDED_ENV[provider])
+    env = f"DEPUTY_MODE = {json.dumps(mode)}"
+    if provider != DEFAULT_PROVIDER:
+        env += f", DEPUTY_PROVIDER = {json.dumps(provider)}"
     return (
         "\n[mcp_servers.deputy]\n"
         f"command = {json.dumps(command)}\n"
         f"args = [{quoted}]\n"
-        f"env = {{ DEPUTY_MODE = {json.dumps(mode)} }}\n"
+        f"env = {{ {env} }}\n"
         f"env_vars = [{forwarded}]\n"
         "# Deputy runs take minutes; Codex's default tool timeout is 60 s.\n"
         "startup_timeout_sec = 120\n"
@@ -159,21 +187,22 @@ def codex_home() -> Path:
 
 
 def setup_codex(pypi: bool = False, mode: str = DEFAULT_MODE, force: bool = False,
-                dry_run: bool = False) -> list[str]:
+                dry_run: bool = False, provider: str = DEFAULT_PROVIDER) -> list[str]:
     """Add Deputy to ~/.codex/config.toml and install the playbook as a Codex skill."""
-    rules = agent_rules(mode)
+    provider = provider_name(provider)
+    rules = agent_rules(mode, provider)
     config = codex_home() / "config.toml"
     text = config.read_text(encoding="utf-8") if config.exists() else ""
     notes = []
     if "[mcp_servers.deputy]" in text:
         notes.append(f"kept the existing [mcp_servers.deputy] in {config}; edit it by hand to change it")
     elif dry_run:
-        notes.append(f"would append to {config}:{codex_block(pypi, mode)}")
+        notes.append(f"would append to {config}:{codex_block(pypi, mode, provider)}")
     else:
         config.parent.mkdir(parents=True, exist_ok=True)
         backup = _backup(config)
         with open(config, "a", encoding="utf-8") as handle:
-            handle.write(codex_block(pypi, mode))
+            handle.write(codex_block(pypi, mode, provider))
         notes.append(f"updated {config}" + (f" (backup: {backup.name})" if backup else ""))
 
     skill = Path.home() / ".agents" / "skills" / "deputy" / "SKILL.md"
@@ -182,7 +211,7 @@ def setup_codex(pypi: bool = False, mode: str = DEFAULT_MODE, force: bool = Fals
             "(investigate). Do not use for trivial edits.\n---\n\n" + rules)
     notes.append(f"would write {skill}" if dry_run else _write_new(skill, body, force))
     notes.append(f"Deputy runs in {mode!r} mode in Codex (change DEPUTY_MODE in config.toml). "
-                 "Make sure DEEPINFRA_API_KEY is set in your environment, then restart Codex.")
+                 f"Make sure {KEY_VAR[provider]} is set in your environment, then restart Codex.")
     return notes
 
 

@@ -24,14 +24,40 @@ EFFORTS = ("none", "low", "medium", "high", "max")
 MODES = ("accuracy", "lean", "balanced", "partner", "savings")
 DEFAULT_MODE = "accuracy"
 
-# Checked in order. OPENAI_API_KEY is deliberately NOT a fallback: sending
-# someone's real OpenAI key to another provider would leak it.
-KEY_VARS = ("DEPUTY_API_KEY", "DEEPINFRA_API_KEY", "DEEPINFRA_TOKEN")
+XAI_BASE_URL = "https://api.x.ai/v1"
+XAI_DEFAULT_MODEL = "grok-4.3"  # fast, strong tool calling, documented reasoning_effort
 
-# USD per 1M tokens for the default model on DeepInfra (October 2026).
-# Prices change; override with DEPUTY_PRICE_INPUT / _CACHED / _OUTPUT.
+# Provider presets: (display name, base URL, default model). DEPUTY_BASE_URL and DEPUTY_MODEL
+# override the last two. "grok" is an alias for "xai".
+PROVIDERS = {
+    "deepinfra": ("DeepInfra", DEFAULT_BASE_URL, DEFAULT_MODEL),
+    "xai": ("xAI", XAI_BASE_URL, XAI_DEFAULT_MODEL),
+}
+PROVIDER_ALIASES = {"grok": "xai"}
+DEFAULT_PROVIDER = "deepinfra"
+
+# Key variables per API host. A provider's key is only sent to that provider's own host, so a
+# DeepInfra key never reaches xAI or the other way round; other endpoints use DEPUTY_API_KEY.
+# OPENAI_API_KEY is deliberately never read: sending someone's real OpenAI key to another
+# provider would leak it.
+HOST_KEY_VARS = {
+    "api.deepinfra.com": ("DEEPINFRA_API_KEY", "DEEPINFRA_TOKEN"),
+    "api.x.ai": ("XAI_API_KEY",),
+    "us.api.x.ai": ("XAI_API_KEY",),
+}
+
+# USD per 1M tokens (input, cached input, output), October 2026. Prices change; override with
+# DEPUTY_PRICE_INPUT / _CACHED / _OUTPUT. xAI bills prompts of 200k tokens or more at double rate.
+_GROK_PRICES = {
+    ("grok-4.3", "grok-4.3-latest", "grok-4.20", "grok-4.20-reasoning", "grok-4.20-0309-reasoning",
+     "grok-4.20-0309-non-reasoning"): (1.25, 0.20, 2.50),
+    ("grok-build-0.1", "grok-code-fast-1", "grok-code-fast"): (1.00, 0.20, 2.00),
+    ("grok-4.5", "grok-4.5-latest"): (2.00, 0.30, 6.00),
+    ("grok-4.6", "grok-4.7"): (2.00, 0.50, 6.00),
+}
 KNOWN_PRICES = {
     (DEFAULT_BASE_URL, DEFAULT_MODEL): (0.098, 0.0029, 0.294),
+    **{(XAI_BASE_URL, model): price for models, price in _GROK_PRICES.items() for model in models},
 }
 
 LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1"}
@@ -117,6 +143,16 @@ def is_deepseek_api(url: str) -> bool:
     return host == "deepseek.com" or host.endswith(".deepseek.com")
 
 
+def is_xai_api(url: str) -> bool:
+    host = (urlsplit(url).hostname or "").lower()
+    return host == "x.ai" or host.endswith(".x.ai")
+
+
+def key_vars_for(url: str) -> tuple[str, ...]:
+    """The variables that may hold the key for this endpoint, in the order they are checked."""
+    return ("DEPUTY_API_KEY", *HOST_KEY_VARS.get((urlsplit(url).hostname or "").lower(), ()))
+
+
 @dataclass(frozen=True)
 class Settings:
     api_key: str = field(repr=False)
@@ -141,15 +177,24 @@ class Settings:
     lead_price_output: float = 20.0
     stats_enabled: bool = True
     data_dir: Path = field(default_factory=lambda: Path.home() / ".deputy")
+    provider: str = DEFAULT_PROVIDER
 
     @property
     def has_prices(self) -> bool:
         return self.price_input > 0 or self.price_output > 0
 
+    @property
+    def key_hint(self) -> str:
+        """The variable to tell users to set when the key is missing: the provider's own key
+        variable (DEEPINFRA_API_KEY, XAI_API_KEY), or DEPUTY_API_KEY for other endpoints."""
+        names = key_vars_for(self.base_url)
+        return names[1] if len(names) > 1 else names[0]
+
     def describe(self) -> dict:
         """A summary that is safe to show: it never contains the key."""
         return {
             "mode": self.mode,
+            "provider": self.provider,
             "model": self.model,
             "endpoint": self.base_url,
             "thinking": self.effort,
@@ -204,15 +249,21 @@ def _workspace(env: Mapping[str, str], cwd: Path | None) -> Path:
 
 def load_settings(env: Mapping[str, str] | None = None, cwd: Path | None = None) -> Settings:
     env = os.environ if env is None else env
+    provider = (_get(env, "DEPUTY_PROVIDER") or DEFAULT_PROVIDER).lower()
+    provider = PROVIDER_ALIASES.get(provider, provider)
+    if provider not in PROVIDERS:
+        raise ConfigError(f"DEPUTY_PROVIDER must be one of {', '.join([*PROVIDERS, *PROVIDER_ALIASES])}, "
+                          f"got {provider!r}")
+    _, preset_url, preset_model = PROVIDERS[provider]
+    base_url = validate_base_url(_get(env, "DEPUTY_BASE_URL") or preset_url)
+    model = _get(env, "DEPUTY_MODEL") or preset_model
+
     api_key, key_source = "", ""
-    for name in KEY_VARS:
+    for name in key_vars_for(base_url):
         value = _get(env, name)
         if value:
             api_key, key_source = value, name
             break
-
-    base_url = validate_base_url(_get(env, "DEPUTY_BASE_URL") or DEFAULT_BASE_URL)
-    model = _get(env, "DEPUTY_MODEL") or DEFAULT_MODEL
     effort = (_get(env, "DEPUTY_THINKING") or DEFAULT_EFFORT).lower()
     if effort not in EFFORTS:
         raise ConfigError(f"DEPUTY_THINKING must be one of {', '.join(EFFORTS)}, got {effort!r}")
@@ -243,4 +294,5 @@ def load_settings(env: Mapping[str, str] | None = None, cwd: Path | None = None)
         lead_price_output=lead_out,
         stats_enabled=_bool(env, "DEPUTY_STATS", True),
         data_dir=_data_dir(env),
+        provider=provider,
     )

@@ -61,11 +61,12 @@ All settings are environment variables. The plugin sets the first four for you.
 | Variable | Default | Meaning |
 |---|---|---|
 | `DEPUTY_MODE` | `accuracy` | `accuracy`, `lean`, `balanced`, `partner` or `savings` |
-| `DEPUTY_API_KEY` | (plugin prompt) | API key. Falls back to `DEEPINFRA_API_KEY`, then `DEEPINFRA_TOKEN` |
+| `DEPUTY_PROVIDER` | `deepinfra` | `deepinfra` (DeepSeek) or `xai` (Grok; `grok` also works). Sets the endpoint, default model and key variable |
+| `DEPUTY_API_KEY` | (plugin prompt) | API key for the configured endpoint. Falls back to the provider's own key: `DEEPINFRA_API_KEY` (then `DEEPINFRA_TOKEN`) for DeepInfra, `XAI_API_KEY` for xAI |
 | `DEPUTY_THINKING` | `high` | `none`, `low`, `medium`, `high` or `max` |
 | `DEPUTY_WORKSPACE` | project folder | Folder Deputy may touch. Home folders and drive roots are refused |
-| `DEPUTY_MODEL` | `deepseek-ai/DeepSeek-V4.1-Flash-1017` | Any model your endpoint serves |
-| `DEPUTY_BASE_URL` | `https://api.deepinfra.com/v1/openai` | Any OpenAI-compatible endpoint (https, or http on localhost) |
+| `DEPUTY_MODEL` | `deepseek-ai/DeepSeek-V4.1-Flash-1017` (xAI: `grok-4.3`) | Any model your endpoint serves |
+| `DEPUTY_BASE_URL` | `https://api.deepinfra.com/v1/openai` (xAI: `https://api.x.ai/v1`) | Any OpenAI-compatible endpoint (https, or http on localhost) |
 | `DEPUTY_MAX_TURNS` | `40` | Tool-calling rounds per run |
 | `DEPUTY_MAX_RUN_TOKENS` | `2000000` | Token budget per run |
 | `DEPUTY_MAX_OUTPUT_TOKENS` | `16384` | Output limit per response |
@@ -78,7 +79,26 @@ All settings are environment variables. The plugin sets the first four for you.
 | `DEPUTY_STATS` | `true` | Keep the savings history; `false` counts only the current session |
 | `DEPUTY_DATA_DIR` | plugin data folder, else `~/.deputy` | Where the savings log (`stats.jsonl`) lives |
 
-Deputy never reads `OPENAI_API_KEY`, so a real OpenAI key cannot leak to another provider.
+Deputy never reads `OPENAI_API_KEY`, so a real OpenAI key cannot leak to another provider. A
+provider's own key variable is only sent to that provider's host: `DEEPINFRA_API_KEY` only to
+`api.deepinfra.com` and `XAI_API_KEY` only to `api.x.ai`. Any other endpoint needs `DEPUTY_API_KEY`.
+
+### Grok (xAI)
+
+Set `DEPUTY_PROVIDER=xai` and `XAI_API_KEY`. Models and October 2026 prices per 1M tokens
+(input / cached / output; prompts of 200k tokens or more cost double):
+
+| Model | Price | Notes |
+|---|---|---|
+| `grok-4.3` (default) | $1.25 / $0.20 / $2.50 | Fast, strong tool calling, 1M context. Thinking is adjustable, including off |
+| `grok-build-0.1` | $1.00 / $0.20 / $2.00 | xAI's coding model, 256k context, public beta. Thinking is fixed, so `DEPUTY_THINKING` is not sent |
+| `grok-4.7` | $2.00 / $0.50 / $6.00 | xAI's strongest model. Thinking cannot be turned off |
+
+Deputy maps `DEPUTY_THINKING` to xAI's levels (`max` becomes `xhigh`), sends
+`max_completion_tokens` (xAI deprecated `max_tokens`), and gives each run its own
+`x-grok-conv-id` header so repeated turns hit xAI's prompt cache. xAI says it does not train on
+API data and keeps it 30 days for audits. Grok support was tested against xAI's documented API,
+not yet with a live key; run `deputy doctor` after setting it up.
 
 Set the key as an environment variable instead of the plugin prompt:
 
@@ -121,12 +141,13 @@ deputy setup codex                    # ~/.codex/config.toml + ~/.agents/skills/
 deputy setup rules                    # print the playbook, e.g. for Cursor Settings > Rules
 ```
 
-Options: `--mode accuracy|lean|balanced|partner|savings`, `--pypi` (run the PyPI package instead of GitHub),
+Options: `--mode accuracy|lean|balanced|partner|savings`, `--provider deepinfra|xai`, `--pypi` (run the PyPI package instead of GitHub),
 `--force`, `--dry-run`. Run them with `uvx --from git+https://github.com/alimohammadiamirhossein/deputy deputy setup ...`
 if Deputy isn't installed.
 
 - **Cursor** reads `DEEPINFRA_API_KEY` through `${env:DEEPINFRA_API_KEY}`, and in a project config
-  sets `DEPUTY_WORKSPACE` to `${workspaceFolder}`.
+  sets `DEPUTY_WORKSPACE` to `${workspaceFolder}`. With `--provider xai` it reads `XAI_API_KEY`
+  instead and sets `DEPUTY_PROVIDER=xai`; the DeepInfra key is not passed at all.
 - **Codex** forwards `DEEPINFRA_API_KEY` with `env_vars` and gets `tool_timeout_sec = 1800`, because
   Codex's default 60-second tool timeout is shorter than most Deputy runs.
 - Copy-paste versions of all four files are in [integrations/](../integrations/).

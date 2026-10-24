@@ -152,8 +152,8 @@ async def _ready_settings(ctx: Context | None = None, project_dir: str = "") -> 
                         "pass project_dir with the project's absolute path.") from None
     if not settings.api_key:
         raise ToolError(
-            "Deputy has no API key. Set DEEPINFRA_API_KEY (or DEPUTY_API_KEY) in your "
-            "environment, then restart your editor. See the README for the DeepInfra setup."
+            f"Deputy has no API key. Set {settings.key_hint} (or DEPUTY_API_KEY) in your "
+            "environment, then restart your editor. See the README for setup."
         )
     return settings
 

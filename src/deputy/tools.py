@@ -33,7 +33,7 @@ MAX_MATCHES = 200
 # Environment variables whose names look like secrets are removed before a
 # command runs, so the deputy model cannot read your keys through the shell.
 SECRET_NAME = re.compile(r"(KEY|TOKEN|SECRET|PASSW|CREDENTIAL|AUTH(?!OR)|COOKIE)", re.I)
-SECRET_PREFIXES = ("DEPUTY_", "DEEPINFRA_", "ANTHROPIC_", "OPENAI_", "CLAUDE_CODE_OAUTH")
+SECRET_PREFIXES = ("DEPUTY_", "DEEPINFRA_", "XAI_", "ANTHROPIC_", "OPENAI_", "CLAUDE_CODE_OAUTH")
 
 
 @dataclass

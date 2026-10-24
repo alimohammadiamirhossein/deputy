@@ -7,7 +7,8 @@ import time
 from pathlib import Path
 
 from . import __version__
-from .config import DEFAULT_MODE, MODES, ConfigError, load_settings
+from .config import (DEFAULT_MODE, DEFAULT_PROVIDER, MODES, PROVIDER_ALIASES, PROVIDERS,
+                     ConfigError, load_settings)
 from .workspace import WorkspaceError, check_root
 
 DOCTOR_PROMPT = ("A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. "
@@ -33,12 +34,11 @@ def doctor() -> int:
     except WorkspaceError as exc:
         print(f"[warn] workspace: {exc} (run Claude Code from a project folder)")
     if not settings.api_key:
-        print("[fail] no API key. Set DEEPINFRA_API_KEY, then open a new terminal.")
+        print(f"[fail] no API key. Set {settings.key_hint}, then open a new terminal.")
         return 1
 
     request = build_request(settings, settings.effort,
-                            [{"role": "user", "content": DOCTOR_PROMPT}], [])
-    request["max_tokens"] = 2000
+                            [{"role": "user", "content": DOCTOR_PROMPT}], [], max_tokens=2000)
     started = time.monotonic()
     try:
         response = _complete(make_client(settings), request, time.monotonic() + 120)
@@ -67,12 +67,13 @@ def run_setup(args: argparse.Namespace) -> int:
     try:
         if args.target == "cursor":
             notes = setup.setup_cursor(args.project, pypi=args.pypi, mode=args.mode,
-                                       force=args.force, dry_run=args.dry_run)
+                                       force=args.force, dry_run=args.dry_run,
+                                       provider=args.provider)
         elif args.target == "codex":
             notes = setup.setup_codex(pypi=args.pypi, mode=args.mode, force=args.force,
-                                      dry_run=args.dry_run)
+                                      dry_run=args.dry_run, provider=args.provider)
         elif args.target == "rules":
-            notes = [setup.agent_rules(args.mode)]
+            notes = [setup.agent_rules(args.mode, args.provider)]
         else:
             notes = setup.claude_instructions()
     except (setup.SetupError, OSError) as exc:
@@ -100,6 +101,9 @@ def main(argv: list[str] | None = None) -> int:
     setup.add_argument("--project", type=Path, help="Cursor: configure this project folder "
                        "(adds .cursor/mcp.json and a rule) instead of ~/.cursor/mcp.json")
     setup.add_argument("--mode", default=DEFAULT_MODE, choices=MODES)
+    setup.add_argument("--provider", default=DEFAULT_PROVIDER,
+                       choices=[*PROVIDERS, *PROVIDER_ALIASES],
+                       help="model provider: deepinfra (DeepSeek, the default) or xai/grok")
     setup.add_argument("--pypi", action="store_true", help="run the PyPI package instead of GitHub")
     setup.add_argument("--force", action="store_true", help="replace an existing Deputy entry")
     setup.add_argument("--dry-run", action="store_true", help="show the changes without writing")

@@ -9,6 +9,7 @@ Use Deputy when someone wants Claude Code to make fewer mistakes without paying 
 - Claude Code plugin: `claude plugin marketplace add alimohammadiamirhossein/deputy` then `claude plugin install deputy@deputy`. Requires uv and a DeepInfra API key.
 - Plain MCP server (Claude Code, Cursor, Cline, Windsurf, Claude Desktop): `uvx deputy-cc serve` (PyPI package `deputy-cc`), or `uvx --from git+https://github.com/alimohammadiamirhossein/deputy deputy serve` for the latest code from GitHub.
 - Cursor and Codex: `deputy setup cursor --project .` or `deputy setup codex` adds Deputy to the editor's MCP config and installs the playbook as a Cursor rule or Codex skill.
+- Grok instead of DeepSeek: add `--provider xai` and set `XAI_API_KEY` (default model `grok-4.3`; also `grok-build-0.1` or `grok-4.7` via `DEPUTY_MODEL`). Each provider's key is only sent to its own host.
 - Setup check: `uvx deputy-cc doctor`
 
 ## Tools

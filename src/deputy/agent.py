@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Callable, Literal
 
-from .config import Settings, is_deepseek_api
+from .config import Settings, is_deepseek_api, is_xai_api
 from .tools import ToolContext, call_tool, schemas, summarize_changes
 from .workspace import Workspace
 
@@ -181,15 +182,37 @@ class RunResult:
         return "\n".join(lines)
 
 
+# Grok models whose reasoning effort cannot be set (or where the parameter is undocumented), so
+# Deputy does not send it: the coding models and grok-4.20.
+XAI_FIXED_REASONING = ("grok-build", "grok-code-fast", "grok-4.20")
+
+
+def xai_reasoning_effort(model: str, effort: str) -> str | None:
+    """Deputy's thinking level as xAI's reasoning_effort, or None to leave it out."""
+    name = model.lower().rsplit("/", 1)[-1]
+    if name.startswith(XAI_FIXED_REASONING) or "non-reasoning" in name:
+        return None
+    if effort == "max":
+        return "xhigh"
+    if effort == "none" and not name.startswith("grok-4.3"):
+        return "low"  # only grok-4.3 can turn reasoning off; later models always reason
+    return effort
+
+
 def build_request(settings: Settings, effort: str, messages: list[dict],
-                  tool_schemas: list[dict]) -> dict:
-    request: dict[str, Any] = {
-        "model": settings.model,
-        "messages": messages,
-        "max_tokens": settings.max_output_tokens,
-    }
+                  tool_schemas: list[dict], max_tokens: int | None = None) -> dict:
+    limit = max_tokens or settings.max_output_tokens
+    request: dict[str, Any] = {"model": settings.model, "messages": messages}
     if tool_schemas:
         request["tools"] = tool_schemas
+    if is_xai_api(settings.base_url):
+        # xAI deprecated max_tokens; max_completion_tokens leaves out reasoning tokens.
+        request["max_completion_tokens"] = limit
+        xai_effort = xai_reasoning_effort(settings.model, effort)
+        if xai_effort:
+            request["reasoning_effort"] = xai_effort
+        return request
+    request["max_tokens"] = limit
     if is_deepseek_api(settings.base_url):
         # DeepSeek's own API switches thinking with a separate field.
         request["extra_body"] = {"thinking": {"type": "disabled" if effort == "none" else "enabled"}}
@@ -205,15 +228,18 @@ def _complete(client: Any, request: dict, deadline: float) -> Any:
     import openai
 
     delays = (2, 6, 15)
+    bad_key = DeputyError("the provider rejected the API key (check DEPUTY_API_KEY, or "
+                          "DEEPINFRA_API_KEY / XAI_API_KEY for your provider)")
     for attempt in range(len(delays) + 1):
         try:
             return client.chat.completions.create(**request)
         except openai.AuthenticationError:
-            raise DeputyError("the provider rejected the API key (check DEPUTY_API_KEY / "
-                              "DEEPINFRA_API_KEY)") from None
+            raise bad_key from None
         except openai.NotFoundError:
             raise DeputyError(f"the provider does not know the model {request['model']!r}") from None
         except openai.BadRequestError as exc:
+            if "api key" in str(exc).lower():  # xAI answers a wrong key with 400, not 401
+                raise bad_key from None
             raise DeputyError(f"the provider rejected the request: {exc}") from None
         except (openai.APIConnectionError, openai.RateLimitError, openai.InternalServerError) as exc:
             if attempt == len(delays) or time.monotonic() + delays[attempt] > deadline:
@@ -268,6 +294,9 @@ def run_agent(
     deadline = started + settings.run_timeout
     limit = max_turns or settings.max_turns
     status, final, turns = "max_turns", "", 0
+    # xAI routes requests with the same conversation id to the same server, so the growing
+    # prompt stays cached; without it, turns often pay the full input price.
+    headers = {"x-grok-conv-id": uuid.uuid4().hex} if is_xai_api(settings.base_url) else None
 
     for turns in range(1, limit + 1):
         if time.monotonic() > deadline:
@@ -276,7 +305,10 @@ def run_agent(
         if usage.total >= settings.max_run_tokens:
             status = "budget"
             break
-        response = _complete(client, build_request(settings, effort, messages, tool_schemas), deadline)
+        request = build_request(settings, effort, messages, tool_schemas)
+        if headers:
+            request["extra_headers"] = headers
+        response = _complete(client, request, deadline)
         usage.add(getattr(response, "usage", None))
         choice = response.choices[0]
         message = choice.message
