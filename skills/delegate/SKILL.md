@@ -9,8 +9,12 @@ argument-hint: "<task>"
 Current Deputy mode: **${user_config.mode}** (if this shows a placeholder, call the `status` tool).
 
 - **accuracy:** write the code yourself. Delegate only because the user asked for it.
+- **lean:** delegate well-specified work big enough to pay off (multi-file or repetitive edits,
+  tests, boilerplate); write changes of a few lines yourself.
 - **balanced:** delegate only low-risk mechanical work (boilerplate, renames, formatting, test
   scaffolding, repetitive edits). Keep logic and tricky code yourself.
+- **partner:** delegate every low-level job, even small ones; keep design and judgment calls
+  yourself, and read every diff Deputy produces.
 - **savings:** delegate well-specified coding work; keep design and risky changes yourself.
 
 ## Writing the brief

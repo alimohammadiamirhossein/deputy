@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from . import __version__
-from .config import ConfigError, load_settings
+from .config import DEFAULT_MODE, MODES, ConfigError, load_settings
 from .workspace import WorkspaceError, check_root
 
 DOCTOR_PROMPT = ("A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. "
@@ -99,7 +99,7 @@ def main(argv: list[str] | None = None) -> int:
     setup.add_argument("target", choices=["cursor", "codex", "claude", "rules"])
     setup.add_argument("--project", type=Path, help="Cursor: configure this project folder "
                        "(adds .cursor/mcp.json and a rule) instead of ~/.cursor/mcp.json")
-    setup.add_argument("--mode", default="accuracy", choices=["accuracy", "balanced", "savings"])
+    setup.add_argument("--mode", default=DEFAULT_MODE, choices=MODES)
     setup.add_argument("--pypi", action="store_true", help="run the PyPI package instead of GitHub")
     setup.add_argument("--force", action="store_true", help="replace an existing Deputy entry")
     setup.add_argument("--dry-run", action="store_true", help="show the changes without writing")

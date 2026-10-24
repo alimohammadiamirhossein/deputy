@@ -135,8 +135,8 @@ stored, never code or prompts. Set your lead model with `DEPUTY_LEAD_MODEL` (`op
   touch several files.
 - A second opinion before Claude commits to a design, without spending Claude tokens on it.
 - Wide reading in a big codebase, such as "where is this setting read?".
-- Well-specified mechanical work (boilerplate, renames, test scaffolding) in `balanced` or
-  `savings` mode, when you want to save Claude tokens on larger jobs. On small tasks it saved
+- Well-specified mechanical work (boilerplate, renames, test scaffolding) in `lean`, `balanced`,
+  `partner` or `savings` mode, when you want to save Claude tokens on larger jobs. On small tasks it saved
   nothing in the [benchmark](#benchmark-opus-with-and-without-deputy).
 
 **Skip it for:**
@@ -221,7 +221,9 @@ It's the best price-to-quality option we found for this job:
 | Mode | Who writes the code | Pick it when |
 |---|---|---|
 | **accuracy** (default) | Claude, always | You want the best result |
+| **lean** | Claude for small and tricky changes; Deputy reads code and takes larger well-specified work | You want to spend as few Claude tokens as possible with little loss of accuracy |
 | **balanced** | Claude; Deputy takes boilerplate | You want some savings without risk |
+| **partner** | Deputy does all low-level work; Claude checks every diff | You want Deputy doing the legwork and pitching ideas, with Claude verifying |
 | **savings** | Deputy, Claude verifies | You want to save the most tokens |
 
 Change it in the plugin settings (`/plugin`) or with `DEPUTY_MODE`.

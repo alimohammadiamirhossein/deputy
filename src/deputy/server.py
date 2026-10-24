@@ -41,12 +41,34 @@ POLICIES = {
 - After finishing a non-trivial change and before telling the user it is done, call `review`.
   Verify every finding against the code. Fix confirmed problems; briefly note rejected ones.
 - Use `investigate` only to locate code; then read the cited lines yourself before acting.""",
+    "lean": """MODE: LEAN (spend as few of your tokens as possible, with little loss of accuracy).
+- Reading code is your biggest cost. Use `investigate` instead of opening many files yourself,
+  then read only the lines it cites.
+- `delegate` well-specified work that is big enough to pay off: changes across several files,
+  repetitive edits, test suites, boilerplate, migrations. Write changes of a few lines yourself:
+  checking a small delegated diff costs about as much as writing it.
+- Keep design decisions, unclear bugs, security-sensitive code and subtle logic yourself.
+- Check delegated work cheaply but always: run the tests and read the diff, not whole files.
+- Call `review` on non-trivial changes before you say they are done; skip it for small changes
+  whose tests pass. Call `consult` only at real decision points.""",
     "balanced": """MODE: BALANCED (accuracy first, but save tokens on low-risk work).
 - Write logic, algorithms, APIs, security-sensitive and tricky code yourself.
 - You may `delegate` low-risk mechanical work: boilerplate, renames, formatting, test
   scaffolding, repetitive edits across many files. Review every delegated diff yourself.
 - Use `consult` before non-trivial decisions and `review` before declaring non-trivial work done.
 - Use `investigate` for wide reading, then confirm the cited lines yourself.""",
+    "partner": """MODE: PARTNER (Deputy does the low-level work and brainstorms with you; you lead and verify).
+- Hand Deputy every low-level job, even small ones: reading and searching code (`investigate`),
+  and boilerplate, renames, formatting, tests, repetitive or multi-file edits and well-specified
+  implementation (`delegate`). Do it yourself only for a one-line change in a file you already
+  have open, or work that needs judgment.
+- Ask Deputy for ideas: call `consult` with 2-3 lenses before non-trivial decisions and when you
+  are stuck. Write your own view in `my_view` first.
+- Deputy makes mistakes. Treat everything it returns as a draft from a junior colleague: read
+  every delegated diff, run the tests, check the file:line citations before acting on them, and
+  adopt an idea only after checking it against the code.
+- Keep design, ambiguous bugs, security-sensitive code and final decisions yourself.
+- Call `review` before you say non-trivial work is done.""",
     "savings": """MODE: SAVINGS (the user wants to save tokens).
 - `delegate` well-specified coding work: multi-file edits, refactors, tests, boilerplate,
   migrations, lint and type fixes. Give the goal, scope, constraints and a verify command.

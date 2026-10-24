@@ -46,7 +46,9 @@ Plugin slash commands: `/deputy:consult`, `/deputy:review`, `/deputy:investigate
 | Mode | Claude writes | Deputy does |
 |---|---|---|
 | `accuracy` (default) | All code | Second opinions, reviews, wide searches. Delegation only on request |
+| `lean` | Small changes, design, tricky logic | Reading (`investigate`) and well-specified work big enough to pay off; `review` only on non-trivial changes, `consult` only at real decision points |
 | `balanced` | Logic and risky code | Also low-risk mechanical work |
+| `partner` | Design, tricky logic, final decisions | Every low-level job, even small ones, plus ideas through `consult`; Claude reads every diff and checks every idea |
 | `savings` | Plans and reviews | Most well-specified coding |
 
 The mode is set in the plugin settings or with `DEPUTY_MODE`, and it changes the instructions the
@@ -58,7 +60,7 @@ All settings are environment variables. The plugin sets the first four for you.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `DEPUTY_MODE` | `accuracy` | `accuracy`, `balanced` or `savings` |
+| `DEPUTY_MODE` | `accuracy` | `accuracy`, `lean`, `balanced`, `partner` or `savings` |
 | `DEPUTY_API_KEY` | (plugin prompt) | API key. Falls back to `DEEPINFRA_API_KEY`, then `DEEPINFRA_TOKEN` |
 | `DEPUTY_THINKING` | `high` | `none`, `low`, `medium`, `high` or `max` |
 | `DEPUTY_WORKSPACE` | project folder | Folder Deputy may touch. Home folders and drive roots are refused |
@@ -119,7 +121,7 @@ deputy setup codex                    # ~/.codex/config.toml + ~/.agents/skills/
 deputy setup rules                    # print the playbook, e.g. for Cursor Settings > Rules
 ```
 
-Options: `--mode accuracy|balanced|savings`, `--pypi` (run the PyPI package instead of GitHub),
+Options: `--mode accuracy|lean|balanced|partner|savings`, `--pypi` (run the PyPI package instead of GitHub),
 `--force`, `--dry-run`. Run them with `uvx --from git+https://github.com/alimohammadiamirhossein/deputy deputy setup ...`
 if Deputy isn't installed.
 

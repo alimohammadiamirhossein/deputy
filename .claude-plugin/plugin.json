@@ -29,8 +29,8 @@
     "mode": {
       "type": "string",
       "title": "Mode",
-      "description": "accuracy (recommended): Claude writes all code, Deputy only gives second opinions and reviews. balanced: Deputy also takes low-risk mechanical work. savings: Deputy takes most coding work.",
-      "options": ["accuracy", "balanced", "savings"],
+      "description": "accuracy (recommended): Claude writes all code, Deputy only gives second opinions and reviews. lean: as few Claude tokens as possible with little accuracy loss; Deputy does the reading and larger well-specified work. balanced: Deputy also takes low-risk mechanical work. partner: Deputy does all low-level work and gives ideas; Claude checks everything. savings: Deputy takes most coding work.",
+      "options": ["accuracy", "lean", "balanced", "partner", "savings"],
       "default": "accuracy"
     },
     "deepinfra_api_key": {

@@ -37,8 +37,14 @@ Change your plan only when Deputy's argument survives your own check, not becaus
 
 DELEGATE_RULES = {
     "accuracy": "Use it only when the user explicitly asks; otherwise write the code yourself.",
+    "lean": "Use it for well-specified work big enough to pay off (multi-file or repetitive edits, "
+            "tests, boilerplate) and `investigate` instead of reading many files yourself; write "
+            "small changes yourself, and always run the tests and read the diff.",
     "balanced": "Use it only for low-risk mechanical work (boilerplate, renames, formatting, test "
                 "scaffolding); write logic yourself and review every delegated diff.",
+    "partner": "Hand it every low-level job, even small ones (with `investigate` for reading), and "
+               "use `consult` for ideas; Deputy makes mistakes, so read every diff, run the tests "
+               "and check each idea against the code.",
     "savings": "Use it for well-specified coding work; keep design and risky changes yourself and "
                "verify every result (read the changed files, check the diff, run the tests).",
 }

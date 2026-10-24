@@ -17,8 +17,11 @@ DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4.1-Flash-1017"
 DEFAULT_EFFORT = "high"
 EFFORTS = ("none", "low", "medium", "high", "max")
 # accuracy: Claude writes all code; Deputy only gives second opinions and reviews.
-# balanced: Deputy also takes low-risk mechanical work. savings: Deputy takes most coding work.
-MODES = ("accuracy", "balanced", "savings")
+# lean: as few Claude tokens as possible with little accuracy loss (Deputy reads and takes
+# larger well-specified work). balanced: Deputy also takes low-risk mechanical work.
+# partner: Deputy does all low-level work and gives ideas; Claude verifies everything.
+# savings: Deputy takes most coding work.
+MODES = ("accuracy", "lean", "balanced", "partner", "savings")
 DEFAULT_MODE = "accuracy"
 
 # Checked in order. OPENAI_API_KEY is deliberately NOT a fallback: sending

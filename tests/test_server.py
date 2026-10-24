@@ -44,7 +44,32 @@ def test_instructions_follow_the_mode():
     assert "call `review`" in accuracy
     assert "low-risk mechanical work" in server.build_instructions("balanced")
     assert "`delegate` well-specified coding work" in server.build_instructions("savings")
+    lean = server.build_instructions("lean")
+    assert "MODE: LEAN" in lean and "big enough to pay off" in lean and "Write changes of a few lines yourself" in lean
+    partner = server.build_instructions("partner")
+    assert "MODE: PARTNER" in partner and "every low-level job, even small ones" in partner
+    assert "call `consult`" in partner and "Deputy makes mistakes" in partner
     assert server.build_instructions("nonsense") == accuracy
+
+
+def test_every_mode_is_offered_everywhere():
+    """The plugin option list, the registry entry and the setup rules all match config.MODES."""
+    import json
+
+    from deputy.config import MODES, read_mode
+    from deputy.setup import DELEGATE_RULES
+
+    root = Path(__file__).resolve().parents[1]
+    plugin = json.loads((root / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))
+    assert plugin["userConfig"]["mode"]["options"] == list(MODES)
+    registry = json.loads((root / "server.json").read_text(encoding="utf-8"))
+    mode_env = next(v for v in registry["packages"][0]["environmentVariables"]
+                    if v["name"] == "DEPUTY_MODE")
+    assert mode_env["choices"] == list(MODES)
+    assert set(DELEGATE_RULES) == set(MODES) and set(server.POLICIES) == set(MODES)
+    assert MODES[:2] == ("accuracy", "lean")  # lean sits right after the default
+    for mode in MODES:
+        assert read_mode({"DEPUTY_MODE": mode.upper()}) == mode
 
 
 def test_missing_key_gives_a_helpful_error(project: Path, monkeypatch):

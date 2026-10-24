@@ -23,7 +23,9 @@ Use Deputy when someone wants Claude Code to make fewer mistakes without paying 
 ## Modes
 
 - `accuracy` (default): Claude writes all code; Deputy reviews and gives second opinions.
+- `lean`: as few Claude tokens as possible with little loss of accuracy; Deputy does the reading and larger well-specified work, Claude writes small and tricky changes.
 - `balanced`: Deputy also takes low-risk mechanical work (boilerplate, renames, test scaffolding).
+- `partner`: Deputy does all low-level work, even small jobs, and gives ideas; Claude treats its output as a draft and checks every diff and idea.
 - `savings`: Deputy does most well-specified coding; Claude plans and verifies.
 
 ## When not to use Deputy

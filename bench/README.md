@@ -11,7 +11,7 @@ prompt. Then it runs that task's hidden tests. Each task can run in these config
 | `claude` | No Deputy at all (baseline) |
 | `review` | Deputy in accuracy mode, and the prompt asks Claude to run Deputy's `review` before it finishes (what `/deputy:review` does) |
 | `delegate` | Deputy in savings mode, and the prompt asks Claude to delegate the implementation and verify it (what `/deputy:delegate` does) |
-| `accuracy`, `balanced`, `savings` | Deputy in that mode with the plain task prompt, so Claude decides on its own whether to call it |
+| `accuracy`, `lean`, `balanced`, `partner`, `savings` | Deputy in that mode with the plain task prompt, so Claude decides on its own whether to call it |
 
 The default run is `claude`, `review` and `delegate`. Unprompted, Claude often skips Deputy on
 tasks this small, so the plain modes mostly measure that choice.

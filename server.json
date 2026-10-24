@@ -35,9 +35,9 @@
         },
         {
           "name": "DEPUTY_MODE",
-          "description": "accuracy: Claude writes all code and Deputy only reviews and consults. balanced: Deputy also takes mechanical work. savings: Deputy takes most coding work.",
+          "description": "accuracy: Claude writes all code; Deputy reviews and consults. lean: fewest Claude tokens, little accuracy loss. balanced: Deputy takes mechanical work. partner: Deputy does all low-level work and gives ideas. savings: Deputy takes most coding.",
           "default": "accuracy",
-          "choices": ["accuracy", "balanced", "savings"]
+          "choices": ["accuracy", "lean", "balanced", "partner", "savings"]
         },
         {
           "name": "DEPUTY_THINKING",

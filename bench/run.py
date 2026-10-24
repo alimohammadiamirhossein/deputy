@@ -38,7 +38,9 @@ RESULTS = BENCH / "results"
 CONFIGS = {
     "claude": (None, ""),
     "accuracy": ("accuracy", ""),
+    "lean": ("lean", ""),
     "balanced": ("balanced", ""),
+    "partner": ("partner", ""),
     "savings": ("savings", ""),
     "review": ("accuracy", "\n\nBefore you say you're done, call Deputy's `review` tool on your "
                            "change and verify each finding against the code."),

@@ -24,7 +24,9 @@ Call `status` once to see the mode.
 | Mode | Who writes code | Deputy is used for |
 |---|---|---|
 | **accuracy** (default) | You, always | `consult` before decisions, `review` after changes, `investigate` for wide searches. `delegate` only if the user asks |
+| **lean** | You for small, tricky or risky changes; Deputy for larger well-specified work | `investigate` instead of reading many files; `delegate` work big enough to pay off; `review` only non-trivial changes |
 | **balanced** | You, for anything with logic or risk | Also `delegate` for low-risk mechanical work (boilerplate, renames, formatting, test scaffolding) |
+| **partner** | Deputy, for every low-level job; you for design and judgment | `investigate` and `delegate` for all legwork, `consult` for ideas; read every diff and check every idea |
 | **savings** | Deputy, for well-specified work | `delegate` most coding; you plan, review and verify |
 
 ## The accuracy loop

@@ -7,6 +7,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Two new modes.** `lean` spends as few Claude tokens as possible with little loss of
+  accuracy: Deputy does the reading (`investigate`) and well-specified work big enough to pay
+  off, and Claude writes small and tricky changes itself. `partner` hands Deputy every
+  low-level job, even small ones, and asks it for ideas through `consult`; Claude treats its
+  output as a draft and checks every diff and idea. Pick them in the plugin settings or with
+  `DEPUTY_MODE`.
 - **Review benchmark.** `bench/review_eval.py` runs Deputy's `review` without Claude on planted
   bugs and on clean diffs. Each planted bug has a clean twin, the same change done right. It
   reports the catch rate, the false-alarm rate on clean diffs (at any severity and at major or
