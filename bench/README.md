@@ -4,14 +4,17 @@ Measures what Deputy changes on real Claude Code runs: **did the work pass tests
 saw, and what did it cost?**
 
 Each run copies a task into a fresh temporary git repo and runs `claude -p` headless with the task
-prompt. Then it runs that task's hidden tests. Every task is run in up to four configs:
+prompt. Then it runs that task's hidden tests. Each task can run in these configs:
 
 | Config | What Claude gets |
 |---|---|
 | `claude` | No Deputy at all (baseline) |
-| `accuracy` | Deputy in accuracy mode: Claude writes the code, Deputy reviews and consults |
-| `balanced` | Deputy in balanced mode |
-| `savings` | Deputy in savings mode: Deputy takes well-specified coding work |
+| `review` | Deputy in accuracy mode, and the prompt asks Claude to run Deputy's `review` before it finishes (what `/deputy:review` does) |
+| `delegate` | Deputy in savings mode, and the prompt asks Claude to delegate the implementation and verify it (what `/deputy:delegate` does) |
+| `accuracy`, `balanced`, `savings` | Deputy in that mode with the plain task prompt, so Claude decides on its own whether to call it |
+
+The default run is `claude`, `review` and `delegate`. Unprompted, Claude often skips Deputy on
+tasks this small, so the plain modes mostly measure that choice.
 
 Costs come from the tools themselves, not estimates: Claude's from Claude Code's
 `total_cost_usd`, Deputy's from the `est. cost` figure on each Deputy result.
@@ -32,12 +35,13 @@ code and pass with a correct solution.
 ## Run it
 
 You need Claude Code (`claude` on your PATH), Python with `pytest`, and a DeepInfra key. Deputy
-starts with `uvx` if you have it, or else from the current Python, so install it there first
-(`pip install -e .` from the repo root).
+starts from the Python that runs `run.py`, so install it there first (`pip install -e .` from the
+repo root). After each run the harness stops that run's Deputy server, which on Windows can
+otherwise outlive Claude Code.
 
 ```bash
 export DEEPINFRA_API_KEY="sk-di-..."
-python bench/run.py                              # all tasks: claude, accuracy, savings
+python bench/run.py                              # all tasks: claude, review, delegate
 python bench/run.py --configs claude accuracy --repeats 3
 python bench/run.py --tasks booking_ranges --model sonnet
 ```
@@ -47,6 +51,14 @@ transcript per run (`*.jsonl`, not committed).
 
 **This spends real money.** Each Opus run costs Claude Code tokens (often $0.10–$1.00), plus a
 fraction of a cent for Deputy. The default run is 4 tasks × 3 configs = 12 runs.
+
+## Results so far
+
+[results/2026-10-24-opus](results/2026-10-24-opus/results.md): one run per task and config on
+Opus 5.5. All 12 runs passed their hidden tests, so these tasks are too easy to show an accuracy
+gain. Mean cost per task was $0.18 for Opus alone, $0.31 with `review` (Deputy's share $0.013)
+and $0.19 with `delegate` (Deputy's share $0.0015). Review findings led Claude to harden the code
+in 3 of 4 tasks. Harder tasks, where Opus sometimes fails, and more repeats are the next step.
 
 ## Reading the results
 

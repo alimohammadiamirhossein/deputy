@@ -41,6 +41,32 @@ You need [uv](https://docs.astral.sh/uv/getting-started/installation/) and a
 Measured on a small demo project with thinking `high`. On real projects, expect `consult` and
 `review` to stay under $0.01. Every result shows its real tokens and cost.
 
+## Benchmark: Opus with and without Deputy
+
+Four small Python tasks with hidden tests Claude never sees ([bench/](https://github.com/alimohammadiamirhossein/deputy/tree/main/bench)),
+one run each on Claude Opus 5.5, October 2026:
+
+| Config | Hidden tests passed | Mean cost (Claude + Deputy) | Median time |
+|---|---|---|---|
+| Opus alone | 4/4 | $0.18 | 30 s |
+| Opus + `/deputy:review` | 4/4 | $0.31 ($0.30 + $0.013) | 3.7 min |
+| Opus + `/deputy:delegate` | 4/4 | $0.19 ($0.19 + $0.0015) | 76 s |
+
+What this shows, and what it doesn't:
+
+- **No accuracy gain to measure here.** The tasks are too easy: Opus passed every hidden test on
+  its own.
+- **Reviews cost Claude more than they cost Deputy.** Deputy's share is about a cent, but Claude
+  spends more checking the findings, so a reviewed task cost 68% more and took longer. One review
+  took 24 minutes because a reviewer thought for 73k tokens.
+- **The findings still changed the code.** In 3 of 4 tasks Claude hardened the code beyond the
+  spec: it fixed a rate limiter that a NaN timestamp would block forever, and added missing tests.
+  It rejected one finding that contradicted the spec.
+- **Delegating saved nothing on tasks this small.** Claude's own reading and checking cost about as
+  much as writing the code itself.
+- **Small sample.** One run per config. Full table:
+  [bench/results/2026-10-24-opus](https://github.com/alimohammadiamirhossein/deputy/blob/main/bench/results/2026-10-24-opus/results.md).
+
 ## What it does
 
 Claude (for example Opus 5.5) stays in charge and **writes the code**. Deputy adds four tools that
@@ -80,11 +106,12 @@ stored, never code or prompts. Set your lead model with `DEPUTY_LEAD_MODEL` (`op
 - A second opinion before Claude commits to a design, without spending Claude tokens on it.
 - Wide reading in a big codebase, such as "where is this setting read?".
 - Well-specified mechanical work (boilerplate, renames, test scaffolding) in `balanced` or
-  `savings` mode, when you want to save Claude tokens.
+  `savings` mode, when you want to save Claude tokens on larger jobs. On small tasks it saved
+  nothing in the [benchmark](#benchmark-opus-with-and-without-deputy).
 
 **Skip it for:**
 
-- Trivial edits like typos and one-liners. A review takes 30–60 seconds and adds little there.
+- Trivial edits like typos and one-liners. A review takes a few minutes and adds little there.
 - Code you may not share with a third party. Deputy sends code to DeepInfra, or to whatever
   endpoint you set in `DEPUTY_BASE_URL` (a local model works too).
 - Final answers. Findings come from a weaker model and include false positives, which is why

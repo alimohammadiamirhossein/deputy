@@ -1,0 +1,222 @@
+[
+  {
+    "task": "booking_ranges",
+    "config": "claude",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "10 passed in 0.21s",
+    "seconds": 25.1,
+    "total_cost": 0.158867,
+    "claude_cost": 0.158867,
+    "turns": 4,
+    "claude_error": false,
+    "deputy_cost": 0.0,
+    "deputy_calls": {},
+    "deputy_key_error": false,
+    "permission_denials": 0
+  },
+  {
+    "task": "booking_ranges",
+    "config": "review",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "10 passed in 0.21s",
+    "seconds": 268.6,
+    "total_cost": 0.243605,
+    "claude_cost": 0.23060460000000002,
+    "turns": 6,
+    "claude_error": false,
+    "deputy_cost": 0.013,
+    "deputy_calls": {
+      "review": 1
+    },
+    "deputy_key_error": false,
+    "permission_denials": 0
+  },
+  {
+    "task": "booking_ranges",
+    "config": "delegate",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "10 passed in 0.19s",
+    "seconds": 59.0,
+    "total_cost": 0.169085,
+    "claude_cost": 0.16758459999999997,
+    "turns": 4,
+    "claude_error": false,
+    "deputy_cost": 0.0015,
+    "deputy_calls": {
+      "delegate": 1
+    },
+    "deputy_key_error": false,
+    "permission_denials": 0
+  },
+  {
+    "task": "expense_report",
+    "config": "claude",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "7 passed in 0.47s",
+    "seconds": 30.0,
+    "total_cost": 0.178755,
+    "claude_cost": 0.17875539999999998,
+    "turns": 4,
+    "claude_error": false,
+    "deputy_cost": 0.0,
+    "deputy_calls": {},
+    "deputy_key_error": false,
+    "permission_denials": 0
+  },
+  {
+    "task": "expense_report",
+    "config": "review",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "7 passed in 0.59s",
+    "seconds": 1455.6,
+    "total_cost": 0.387805,
+    "claude_cost": 0.35570500000000005,
+    "turns": 10,
+    "claude_error": false,
+    "deputy_cost": 0.0321,
+    "deputy_calls": {
+      "review": 1
+    },
+    "deputy_key_error": false,
+    "permission_denials": 0
+  },
+  {
+    "task": "expense_report",
+    "config": "delegate",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "7 passed in 0.24s",
+    "seconds": 107.0,
+    "total_cost": 0.205488,
+    "claude_cost": 0.2032876,
+    "turns": 5,
+    "claude_error": false,
+    "deputy_cost": 0.0022,
+    "deputy_calls": {
+      "delegate": 1
+    },
+    "deputy_key_error": false,
+    "permission_denials": 0
+  },
+  {
+    "task": "rate_limiter",
+    "config": "claude",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "10 passed in 0.32s",
+    "seconds": 33.8,
+    "total_cost": 0.175794,
+    "claude_cost": 0.1757942,
+    "turns": 5,
+    "claude_error": false,
+    "deputy_cost": 0.0,
+    "deputy_calls": {},
+    "deputy_key_error": false,
+    "permission_denials": 0
+  },
+  {
+    "task": "rate_limiter",
+    "config": "review",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "10 passed in 0.26s",
+    "seconds": 176.3,
+    "total_cost": 0.322625,
+    "claude_cost": 0.3183254,
+    "turns": 12,
+    "claude_error": false,
+    "deputy_cost": 0.0043,
+    "deputy_calls": {
+      "review": 1
+    },
+    "deputy_key_error": false,
+    "permission_denials": 0
+  },
+  {
+    "task": "rate_limiter",
+    "config": "delegate",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "10 passed in 0.25s",
+    "seconds": 92.2,
+    "total_cost": 0.191975,
+    "claude_cost": 0.1909748,
+    "turns": 5,
+    "claude_error": false,
+    "deputy_cost": 0.001,
+    "deputy_calls": {
+      "delegate": 1
+    },
+    "deputy_key_error": false,
+    "permission_denials": 0
+  },
+  {
+    "task": "rename_refactor",
+    "config": "claude",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "5 passed in 0.22s",
+    "seconds": 29.3,
+    "total_cost": 0.219873,
+    "claude_cost": 0.21987320000000002,
+    "turns": 16,
+    "claude_error": false,
+    "deputy_cost": 0.0,
+    "deputy_calls": {},
+    "deputy_key_error": false,
+    "permission_denials": 0
+  },
+  {
+    "task": "rename_refactor",
+    "config": "review",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "5 passed in 0.21s",
+    "seconds": 95.1,
+    "total_cost": 0.27909,
+    "claude_cost": 0.27608980000000005,
+    "turns": 19,
+    "claude_error": false,
+    "deputy_cost": 0.003,
+    "deputy_calls": {
+      "review": 1
+    },
+    "deputy_key_error": false,
+    "permission_denials": 0
+  },
+  {
+    "task": "rename_refactor",
+    "config": "delegate",
+    "rep": 1,
+    "model": "opus",
+    "passed": true,
+    "hidden_tests": "5 passed in 0.19s",
+    "seconds": 49.8,
+    "total_cost": 0.194339,
+    "claude_cost": 0.19323859999999998,
+    "turns": 5,
+    "claude_error": false,
+    "deputy_cost": 0.0011,
+    "deputy_calls": {
+      "delegate": 1
+    },
+    "deputy_key_error": false,
+    "permission_denials": 0
+  }
+]

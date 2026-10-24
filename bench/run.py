@@ -5,9 +5,11 @@ Each run copies a task into a fresh temporary git repo, runs `claude -p` headles
 prompt, then runs hidden tests that Claude never saw. Claude's cost is Claude Code's own
 `total_cost_usd`; Deputy's cost is the sum of the `est. cost $X` figures in its tool results.
 
-    python bench/run.py                       # every task, every config, once
-    python bench/run.py --configs claude accuracy --repeats 3
+    python bench/run.py                       # every task: claude, review, delegate, once
+    python bench/run.py --configs claude review --repeats 3
     python bench/run.py --tasks booking_ranges --model sonnet
+
+Deputy runs from the Python that runs this script, so install it there first (`pip install -e .`).
 """
 from __future__ import annotations
 
@@ -21,6 +23,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -29,33 +32,52 @@ REPO = BENCH.parent
 TASKS = BENCH / "tasks"
 RESULTS = BENCH / "results"
 
-# config name -> DEPUTY_MODE, or None for Claude alone (no Deputy server at all)
-CONFIGS = {"claude": None, "accuracy": "accuracy", "balanced": "balanced", "savings": "savings"}
-ALLOWED_TOOLS = "Read,Edit,MultiEdit,Write,Glob,Grep,Bash,mcp__deputy"
+# config name -> (DEPUTY_MODE or None for Claude alone, text appended to the task prompt).
+# Unprompted, Claude often skips Deputy on small tasks, so `review` and `delegate` add the same
+# request a user makes with /deputy:review or /deputy:delegate.
+CONFIGS = {
+    "claude": (None, ""),
+    "accuracy": ("accuracy", ""),
+    "balanced": ("balanced", ""),
+    "savings": ("savings", ""),
+    "review": ("accuracy", "\n\nBefore you say you're done, call Deputy's `review` tool on your "
+                           "change and verify each finding against the code."),
+    "delegate": ("savings", "\n\nDelegate the implementation to Deputy with its `delegate` tool, "
+                            "then verify the result yourself: read the diff and run the tests."),
+}
+# PowerShell is Claude Code's shell tool on Windows; Bash elsewhere. Runs happen in a temp copy.
+ALLOWED_TOOLS = "Read,Edit,MultiEdit,Write,Glob,Grep,Bash,PowerShell,mcp__deputy"
 # Deputy's per-run stats line: "... | 12 turns | 30s | ... | est. cost $0.0011"
 COST_RE = re.compile(r"\|\s*\d+ turns \|.*?est\. cost \$([0-9]+(?:\.[0-9]+)?)")
 KEY_ERRORS = ("has no API key", "rejected the API key")
 
 
-def deputy_command() -> list[str]:
-    if shutil.which("uvx"):
-        return ["uvx", "--from", str(REPO), "deputy"]
-    return [sys.executable, "-m", "deputy"]
-
-
-def mcp_config(mode: str | None, workdir: Path) -> dict:
+def mcp_config(mode: str | None, workdir: Path, marker: str) -> dict:
     if mode is None:
         return {"mcpServers": {}}
-    command, *args = deputy_command()
+    # The marker is ignored by Deputy; it only makes this run's server findable by stop_server.
+    serve = "import sys; from deputy.cli import main; sys.exit(main(['serve']))"
     return {"mcpServers": {"deputy": {
-        "command": command,
-        "args": [*args, "serve"],
+        "command": sys.executable,
+        "args": ["-c", serve, marker],
         "env": {
             "DEPUTY_MODE": mode,
             "DEPUTY_WORKSPACE": str(workdir),
             "DEEPINFRA_API_KEY": "${DEEPINFRA_API_KEY}",
         },
     }}}
+
+
+def stop_server(marker: str) -> None:
+    """Stop a Deputy server that outlived Claude Code. On Windows, killing the launcher process
+    can leave the Python child running, which also keeps the temp folder locked."""
+    if os.name == "nt":
+        script = (f"Get-CimInstance Win32_Process | Where-Object {{ $_.ProcessId -ne $PID -and "
+                  f"$_.CommandLine -like '*{marker}*' }} | ForEach-Object {{ "
+                  "Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }")
+        subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True)
+    else:
+        subprocess.run(["pkill", "-f", marker], capture_output=True)
 
 
 def git(workdir: Path, *args: str) -> None:
@@ -69,6 +91,7 @@ def parse_stream(lines: list[str]) -> dict:
     deputy_calls: dict[str, int] = {}
     deputy_cost = 0.0
     key_error = False
+    denied = 0
     final: dict = {}
     for line in lines:
         try:
@@ -78,7 +101,11 @@ def parse_stream(lines: list[str]) -> dict:
         if event.get("type") == "result":
             final = event
             continue
-        content = (event.get("message") or {}).get("content")
+        if event.get("subtype") == "permission_denied":
+            denied += 1
+            continue
+        message = event.get("message")
+        content = message.get("content") if isinstance(message, dict) else None
         if not isinstance(content, list):
             continue
         for block in content:
@@ -103,6 +130,7 @@ def parse_stream(lines: list[str]) -> dict:
         "deputy_cost": round(deputy_cost, 6),
         "deputy_calls": deputy_calls,
         "deputy_key_error": key_error,
+        "permission_denials": denied,
     }
 
 
@@ -122,15 +150,18 @@ def run_one(task: Path, config: str, args: argparse.Namespace, log_dir: Path, re
     claude = shutil.which("claude")
     if not claude:
         sys.exit("`claude` is not on PATH. Install Claude Code first.")
-    with tempfile.TemporaryDirectory(prefix=f"deputy-bench-{task.name}-") as tmp:
+    marker = f"deputy-bench-{uuid.uuid4().hex[:12]}"
+    with tempfile.TemporaryDirectory(prefix=f"deputy-bench-{task.name}-",
+                                     ignore_cleanup_errors=True) as tmp:
         workdir = Path(tmp) / "work"
         shutil.copytree(task / "repo", workdir)
         git(workdir, "init", "-q")
         git(workdir, "add", "-A")
         git(workdir, "commit", "-q", "-m", "task start")
         config_path = Path(tmp) / "mcp.json"
-        config_path.write_text(json.dumps(mcp_config(CONFIGS[config], workdir)), encoding="utf-8")
-        cmd = [claude, "-p", (task / "task.md").read_text(encoding="utf-8"),
+        mode, suffix = CONFIGS[config]
+        config_path.write_text(json.dumps(mcp_config(mode, workdir, marker)), encoding="utf-8")
+        cmd = [claude, "-p", (task / "task.md").read_text(encoding="utf-8") + suffix,
                "--output-format", "stream-json", "--verbose", "--model", args.model,
                "--max-turns", str(args.max_turns), "--permission-mode", "acceptEdits",
                "--allowedTools", ALLOWED_TOOLS,
@@ -144,6 +175,7 @@ def run_one(task: Path, config: str, args: argparse.Namespace, log_dir: Path, re
             out = exc.stdout or ""
             lines = (out.decode("utf-8", "replace") if isinstance(out, bytes) else out).splitlines()
         seconds = time.monotonic() - started
+        stop_server(marker)
         (log_dir / f"{task.name}-{config}-{rep}.jsonl").write_text("\n".join(lines),
                                                                     encoding="utf-8")
         result = parse_stream(lines)
@@ -183,14 +215,14 @@ def main() -> int:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--tasks", nargs="*", help="task folder names (default: all)")
     parser.add_argument("--configs", nargs="*", choices=list(CONFIGS),
-                        default=["claude", "accuracy", "savings"])
+                        default=["claude", "review", "delegate"])
     parser.add_argument("--model", default="opus", help="Claude model alias or id (default: opus)")
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--max-turns", type=int, default=60)
     parser.add_argument("--timeout", type=int, default=1800, help="seconds per run")
     args = parser.parse_args()
 
-    if any(CONFIGS[c] for c in args.configs) and not (
+    if any(CONFIGS[c][0] for c in args.configs) and not (
             os.environ.get("DEEPINFRA_API_KEY") or os.environ.get("DEPUTY_API_KEY")):
         sys.exit("Set DEEPINFRA_API_KEY first; the Deputy configs need it.")
     tasks = sorted(p for p in TASKS.iterdir() if (p / "task.md").exists())
@@ -207,18 +239,23 @@ def main() -> int:
                 print(f"[{rep}/{args.repeats}] {task.name} / {config} ...", flush=True)
                 row = run_one(task, config, args, log_dir, rep)
                 rows.append(row)
+                save(rows, log_dir)
                 print(f"    {'pass' if row['passed'] else 'FAIL'} | claude "
                       f"{money(row['claude_cost'])} | deputy {money(row['deputy_cost'])} | "
-                      f"{row['seconds']:.0f} s | {row['deputy_calls'] or 'no Deputy calls'}",
-                      flush=True)
+                      f"{row['seconds']:.0f} s | {row['deputy_calls'] or 'no Deputy calls'}"
+                      + (f" | {row['permission_denials']} tool calls denied"
+                         if row["permission_denials"] else ""), flush=True)
                 if row["deputy_key_error"]:
                     sys.exit("Deputy could not use the API key. Check DEEPINFRA_API_KEY.")
 
-    (log_dir / "results.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
-    table = report(rows)
-    (log_dir / "results.md").write_text(table + "\n", encoding="utf-8")
-    print("\n" + table + f"\n\nSaved to {log_dir}")
+    print("\n" + report(rows) + f"\n\nSaved to {log_dir}")
     return 0
+
+
+def save(rows: list[dict], log_dir: Path) -> None:
+    """Write the results after every run, so a crash or Ctrl-C keeps what finished."""
+    (log_dir / "results.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
+    (log_dir / "results.md").write_text(report(rows) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

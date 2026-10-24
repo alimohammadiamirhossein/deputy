@@ -45,9 +45,10 @@ def test_helpers_do_not_warn():
 
 
 def test_no_other_code_uses_old_name():
+    # Package code only: a test that calls the deprecated alias to check it warns is fine.
     offenders = [
         str(path.relative_to(WORKDIR))
-        for path in WORKDIR.rglob("*.py")
+        for path in (WORKDIR / "accounts").glob("*.py")
         if path.name != "users.py" and "get_usr" in path.read_text(encoding="utf-8")
     ]
     assert offenders == []
