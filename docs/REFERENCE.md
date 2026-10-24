@@ -97,8 +97,15 @@ Set `DEPUTY_PROVIDER=xai` and `XAI_API_KEY`. Models and October 2026 prices per 
 Deputy maps `DEPUTY_THINKING` to xAI's levels (`max` becomes `xhigh`), sends
 `max_completion_tokens` (xAI deprecated `max_tokens`), and gives each run its own
 `x-grok-conv-id` header so repeated turns hit xAI's prompt cache. xAI says it does not train on
-API data and keeps it 30 days for audits. Grok support was tested against xAI's documented API,
-not yet with a live key; run `deputy doctor` after setting it up.
+API data and keeps it 30 days for audits.
+
+> **Not tested yet.** Grok support was built from xAI's documentation and checked against its
+> live endpoint with a fake key (which it rejects correctly), but no one has run it with a real
+> key so far. Run `deputy doctor` after setting it up, then please
+> [open an issue](https://github.com/alimohammadiamirhossein/deputy/issues/new?title=Grok%20feedback%3A%20) with what you saw: whether `doctor` passed, which model you used,
+> and any error text (never paste your key). Things we most want to hear about: whether
+> `grok-build-0.1` accepts requests without `reasoning_effort`, whether reasoning tokens show up
+> in `doctor`, and whether `review` and `delegate` finish without errors.
 
 Set the key as an environment variable instead of the plugin prompt:
 

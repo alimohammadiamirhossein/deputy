@@ -12,7 +12,7 @@ and versions follow [Semantic Versioning](https://semver.org/).
   `max_completion_tokens`, maps thinking levels to xAI's (and leaves them out for models with
   fixed reasoning), and adds an `x-grok-conv-id` header per run for prompt caching.
   `deputy setup cursor|codex --provider xai` writes a config that forwards only `XAI_API_KEY`.
-  Tested against xAI's documentation, not yet with a live key.
+  **Experimental and not tested with a real xAI key yet**; feedback is welcome in an issue.
 - **Two new modes.** `lean` spends as few Claude tokens as possible with little loss of
   accuracy: Deputy does the reading (`investigate`) and well-specified work big enough to pay
   off, and Claude writes small and tricky changes itself. `partner` hands Deputy every

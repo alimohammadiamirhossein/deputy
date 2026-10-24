@@ -192,7 +192,10 @@ Set `DEEPINFRA_API_KEY` in your environment first, then restart the editor. Add 
 see the changes without writing them. Ready-made files are in
 [integrations/](https://github.com/alimohammadiamirhossein/deputy/tree/main/integrations).
 
-**Grok instead of DeepSeek:** add `--provider xai` and set `XAI_API_KEY` (from console.x.ai)
+**Grok instead of DeepSeek (experimental, not tested yet):** Grok support follows xAI's
+documentation but has not been run with a real xAI key. If you try it, please
+[tell us what worked and what didn't](https://github.com/alimohammadiamirhossein/deputy/issues/new?title=Grok%20feedback%3A%20), even if it was just a one-word "works".
+Add `--provider xai` and set `XAI_API_KEY` (from console.x.ai)
 instead. Deputy then uses `grok-4.3`; set `DEPUTY_MODEL` to `grok-build-0.1` (xAI's coding model)
 or `grok-4.7` (its strongest). Grok costs about 10 times more per token than DeepSeek V4.1
 Flash.
