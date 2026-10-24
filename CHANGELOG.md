@@ -21,6 +21,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 - The MCP `initialize` handshake now reports Deputy's version instead of the MCP SDK's
   ([#4](https://github.com/alimohammadiamirhossein/deputy/pull/4), fixes
   [#1](https://github.com/alimohammadiamirhossein/deputy/issues/1)).
+- `review` now shows new files the way `git diff` shows an added file. The old "(untracked)" label
+  made reviewers report that a new file would be left out of the change (6 of 72 findings on clean
+  diffs in the review benchmark).
 
 ## [0.2.0] - 2026-10-24
 

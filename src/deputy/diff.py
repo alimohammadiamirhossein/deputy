@@ -23,6 +23,17 @@ def _git(root: Path, *args: str) -> subprocess.CompletedProcess:
     )
 
 
+def _new_file_diff(name: str, text: str) -> str:
+    """A new file the way `git diff` shows one. Git does not track it yet, but it is part of the
+    change; labelling it "untracked" made reviewers report that it would be left out."""
+    lines = text.splitlines()
+    header = f"diff --git a/{name} b/{name}\nnew file mode 100644\n--- /dev/null\n+++ b/{name}"
+    if not lines:
+        return header
+    count = "" if len(lines) == 1 else f",{len(lines)}"
+    return f"{header}\n@@ -0,0 +1{count} @@\n" + "\n".join(f"+{line}" for line in lines)
+
+
 def collect_diff(workspace: Workspace, base: str = "", paths: list[str] | None = None) -> str:
     """Uncommitted changes (staged and unstaged) against `base` (default HEAD), plus new files."""
     if shutil.which("git") is None:
@@ -61,8 +72,7 @@ def collect_diff(workspace: Workspace, base: str = "", paths: list[str] | None =
         if len(data) > MAX_NEW_FILE_BYTES or b"\x00" in data[:8192]:
             parts.append(f"new file {name}: (skipped, binary or larger than {MAX_NEW_FILE_BYTES} bytes)")
             continue
-        body = "\n".join(f"+{line}" for line in data.decode("utf-8", errors="replace").splitlines())
-        parts.append(f"new file {name} (untracked)\n{body}")
+        parts.append(_new_file_diff(name, data.decode("utf-8", errors="replace")))
 
     text = "\n".join(parts).strip()
     if not text:

@@ -34,7 +34,9 @@ def test_collect_diff_includes_edits_and_new_files(repo: Path):
     (repo / "new_module.py").write_text("VALUE = 42\n", encoding="utf-8")
     text = collect_diff(Workspace(repo))
     assert "-    return a - b" in text and "+    return a + b" in text
-    assert "new file new_module.py" in text and "+VALUE = 42" in text
+    assert ("diff --git a/new_module.py b/new_module.py\nnew file mode 100644\n--- /dev/null\n"
+            "+++ b/new_module.py\n@@ -0,0 +1 @@\n+VALUE = 42") in text
+    assert "untracked" not in text
 
 
 @needs_git

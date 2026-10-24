@@ -67,8 +67,9 @@ reading the clean-diff findings:
 
 - In `memoize`, the `focus` says the cache stays small because there are few SKUs, but the cache
   key also includes `qty`. Reviewers who call the cache unbounded have a point.
-- Deputy labels new files "(untracked)" in the diff, and in `retry` some reviewers read that as
-  "`retry.py` will not be committed".
+- In that run, Deputy labelled new files "(untracked)" in the diff, and in `retry` some reviewers
+  read that as "`retry.py` will not be committed". New files now appear as `git diff` shows an
+  added file, which removes that false alarm.
 
 ## Adding a case
 
