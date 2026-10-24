@@ -1,12 +1,31 @@
 import asyncio
+import sys
 from pathlib import Path
 
 import pytest
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 from mcp.server.fastmcp.exceptions import ToolError
 
-from deputy import server
+from deputy import __version__, server
 
 from conftest import FakeClient, reply
+
+
+def test_initialize_reports_deputy_version(tmp_path: Path):
+    async def initialize():
+        params = StdioServerParameters(
+            command=sys.executable, args=["-m", "deputy", "serve"],
+            env={"DEPUTY_DATA_DIR": str(tmp_path / "server-data"),
+                 "DEPUTY_MODE": "accuracy"},
+        )
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                result = await session.initialize()
+                assert result.serverInfo.name == "deputy"
+                assert result.serverInfo.version == __version__
+
+    asyncio.run(asyncio.wait_for(initialize(), timeout=30))
 
 
 def test_tools_are_registered():

@@ -69,6 +69,8 @@ def _startup_mode() -> str:
 
 
 mcp = FastMCP("deputy", instructions=build_instructions(_startup_mode()), log_level="WARNING")
+# FastMCP otherwise reports the SDK's version in the initialize handshake.
+mcp._mcp_server.version = __version__
 
 _code_lock = threading.Lock()
 _session_lock = threading.Lock()
