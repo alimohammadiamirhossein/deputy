@@ -79,19 +79,23 @@ Each planted bug has a clean twin, the same change done right. Five runs each
 
 | Diffs | Reviews | Flagged | Flagged major or critical | Mean cost | Mean time |
 |---|---|---|---|---|---|
-| Planted bug | 30 | **30/30 caught** | 30/30 | $0.0020 | 50 s |
-| Clean | 39 | 23/39 | 11/39 | $0.0064 | 3.5 min |
+| Planted bug | 30 | **30/30 caught** | 30/30 | $0.0022 | 55 s |
+| Clean | 39 | 23/39 | 7/39 | $0.0067 | 4 min |
 
 - **Every planted bug was caught,** at major or critical severity, by both reviewers every time.
-- **Clean code still draws findings,** so Claude has to check each one. Most are minor (55 of
-  72), but 28% of clean reviews included a major claim.
-- **Many of those findings are fair,** such as a test that can't fail or an entry point no test
-  covers. Some are wrong. Six called a new file "not part of the change" because Deputy labels new
-  files as untracked.
-- **Agreement is weak evidence on clean code.** Both reviewers flagged the same spot on 31% of
+- **Clean code still draws findings,** so Claude has to check each one. Most are minor (50 of
+  61), and 18% of clean reviews included a major claim.
+- **Many of those findings are fair,** such as a test that can't fail, an entry point no test
+  covers, or a cache key wider than the change assumed (5 of the 7 major claims).
+- **The benchmark already fixed one cause of false alarms.** In the first run, reviewers read new
+  files labelled "(untracked)" as left out of the change. Deputy now shows them as `git diff`
+  does. Those findings went from 6 to 0, and clean reviews with a major claim from 11/39 to 7/39
+  (part of that drop is run-to-run noise).
+- **Agreement is weak evidence on clean code.** Both reviewers flagged the same spot on 26% of
   clean diffs, so a finding isn't real just because two reviewers report it.
-- Every finding on a clean diff is listed in
-  [the results](https://github.com/alimohammadiamirhossein/deputy/blob/main/bench/results/2026-10-24-review/results.md).
+- Every finding on a clean diff is listed in the results:
+  [latest run](https://github.com/alimohammadiamirhossein/deputy/blob/main/bench/results/2026-10-24-review-after-fix/results.md),
+  [first run](https://github.com/alimohammadiamirhossein/deputy/blob/main/bench/results/2026-10-24-review/results.md).
 
 ## What it does
 

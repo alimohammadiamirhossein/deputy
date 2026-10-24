@@ -60,16 +60,23 @@ Results go to `bench/results/review-<timestamp>/`.
 
 ## Results
 
-The first run (October 2026, DeepSeek V4.1 Flash, thinking `high`, 5 repeats) is in
-[`bench/results/2026-10-24-review`](../results/2026-10-24-review/results.md). Every planted bug
-was caught; 11 of 39 clean reviews included a major or critical finding. Two things to know when
-reading the clean-diff findings:
+Two runs so far, both with DeepSeek V4.1 Flash, thinking `high` and 5 repeats (October 2026):
 
-- In `memoize`, the `focus` says the cache stays small because there are few SKUs, but the cache
-  key also includes `qty`. Reviewers who call the cache unbounded have a point.
-- In that run, Deputy labelled new files "(untracked)" in the diff, and in `retry` some reviewers
-  read that as "`retry.py` will not be committed". New files now appear as `git diff` shows an
-  added file, which removes that false alarm.
+| Run | Planted bugs caught | Clean reviews with a major or critical finding | Findings on clean diffs |
+|---|---|---|---|
+| [First run](../results/2026-10-24-review/results.md) | 30/30 | 11/39 | 72 (17 major) |
+| [After the new-file fix](../results/2026-10-24-review-after-fix/results.md) | 30/30 | 7/39 | 61 (11 major) |
+
+The first run showed that Deputy labelled new files "(untracked)" in the diff, and in `retry`
+some reviewers read that as "`retry.py` will not be committed" (6 findings, 3 of them major).
+New files now appear as `git diff` shows an added file. In the second run those findings
+dropped to 0, and `retry`'s clean twin drew no major finding. With 39 clean reviews per run,
+part of the change in the other cases is run-to-run noise.
+
+One thing to know when reading the clean-diff findings: in `memoize`, the `focus` says the cache
+stays small because there are few SKUs, but the cache key also includes `qty`. Reviewers who
+call the cache unbounded have a point. They account for 5 of the 7 major findings in the second
+run.
 
 ## Adding a case
 
