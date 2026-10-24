@@ -178,6 +178,9 @@ class Settings:
     stats_enabled: bool = True
     data_dir: Path = field(default_factory=lambda: Path.home() / ".deputy")
     provider: str = DEFAULT_PROVIDER
+    # Per-lens caps for review and consult: a lens that runs into one writes up what it has.
+    lens_timeout: int = 300
+    lens_max_output: int = 32_000
 
     @property
     def has_prices(self) -> bool:
@@ -202,6 +205,7 @@ class Settings:
             "workspace": str(self.workspace),
             "max_turns": self.max_turns,
             "max_tokens_per_run": self.max_run_tokens,
+            "per_lens_limit": f"{self.lens_timeout}s or {self.lens_max_output:,} output tokens",
         }
 
 
@@ -295,4 +299,6 @@ def load_settings(env: Mapping[str, str] | None = None, cwd: Path | None = None)
         stats_enabled=_bool(env, "DEPUTY_STATS", True),
         data_dir=_data_dir(env),
         provider=provider,
+        lens_timeout=_int(env, "DEPUTY_LENS_TIMEOUT", 300, 30, 86_400),
+        lens_max_output=_int(env, "DEPUTY_LENS_MAX_OUTPUT_TOKENS", 32_000, 1_000, 2_000_000),
     )

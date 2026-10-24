@@ -103,9 +103,24 @@ REVIEW_HEADER = (
 )
 DEFAULT_REVIEW_LENSES = ["correctness and logic bugs", "edge cases, error handling and missing tests"]
 
+# When a capped run stops early, one last call without tools or thinking asks for the write-up.
+WRAP_UP = ("Stop here: you reached the {reason} for this pass. Do not call any tools. Write your "
+           "final message now, in the required format, using only what you have already checked. "
+           "End with a line NOT CHECKED: listing what you did not get to, or \"none\".")
+WRAP_UP_REASONS = {"time_limit": "time limit", "timeout": "time limit",
+                   "output_limit": "thinking budget", "truncated": "length limit",
+                   "max_turns": "turn limit", "budget": "token budget"}
+WRAP_UP_TOKENS = 4_000
+WRAP_UP_SECONDS = 90
+MIN_TURN_TOKENS = 256  # below this, a turn could not say anything useful
+
 
 class DeputyError(RuntimeError):
     """A run could not start or the provider failed in a way the model cannot fix."""
+
+
+class _OutOfTime(Exception):
+    """A request timed out because the run's deadline passed."""
 
 
 @dataclass
@@ -146,7 +161,7 @@ class Usage:
 @dataclass
 class RunResult:
     mode: str
-    status: str  # completed | max_turns | budget | timeout | truncated
+    status: str  # completed | max_turns | budget | timeout | truncated | time_limit | output_limit
     final_message: str
     turns: int
     seconds: float
@@ -224,15 +239,19 @@ def build_request(settings: Settings, effort: str, messages: list[dict],
     return request
 
 
-def _complete(client: Any, request: dict, deadline: float) -> Any:
+def _complete(client: Any, request: dict, deadline: float, timeout: float | None = None) -> Any:
+    """Send one request with retries. `timeout` bounds this request; with it, a timeout after the
+    deadline raises _OutOfTime instead of DeputyError, so the caller can still wrap up."""
     import openai
 
     delays = (2, 6, 15)
     bad_key = DeputyError("the provider rejected the API key (check DEPUTY_API_KEY, or "
                           "DEEPINFRA_API_KEY / XAI_API_KEY for your provider)")
     for attempt in range(len(delays) + 1):
+        # Recompute on every attempt so a retry cannot run past the deadline.
+        extra = {"timeout": max(1.0, min(timeout, deadline - time.monotonic()))} if timeout else {}
         try:
-            return client.chat.completions.create(**request)
+            return client.chat.completions.create(**request, **extra)
         except openai.AuthenticationError:
             raise bad_key from None
         except openai.NotFoundError:
@@ -242,6 +261,8 @@ def _complete(client: Any, request: dict, deadline: float) -> Any:
                 raise bad_key from None
             raise DeputyError(f"the provider rejected the request: {exc}") from None
         except (openai.APIConnectionError, openai.RateLimitError, openai.InternalServerError) as exc:
+            if timeout and isinstance(exc, openai.APITimeoutError) and time.monotonic() >= deadline - 1:
+                raise _OutOfTime from None
             if attempt == len(delays) or time.monotonic() + delays[attempt] > deadline:
                 raise DeputyError(f"the provider is unavailable: {exc}") from None
             time.sleep(delays[attempt])
@@ -270,7 +291,13 @@ def run_agent(
     lens: str = "",
     max_turns: int | None = None,
     progress: Callable[[int, str], None] | None = None,
+    time_limit: float | None = None,
+    output_limit: int | None = None,
+    wrap_up: bool = False,
 ) -> RunResult:
+    """Run the tool loop. `time_limit` (seconds) and `output_limit` (output tokens, thinking
+    included) cap this run below the global limits. With `wrap_up`, a run that stops early gets
+    one last call, without tools or thinking, to write up what it already checked."""
     if not task or not task.strip():
         raise DeputyError("task must not be empty")
     effort = effort or settings.effort
@@ -291,7 +318,7 @@ def run_agent(
 
     usage = Usage()
     started = time.monotonic()
-    deadline = started + settings.run_timeout
+    deadline = started + min(settings.run_timeout, time_limit or settings.run_timeout)
     limit = max_turns or settings.max_turns
     status, final, turns = "max_turns", "", 0
     # xAI routes requests with the same conversation id to the same server, so the growing
@@ -300,15 +327,27 @@ def run_agent(
 
     for turns in range(1, limit + 1):
         if time.monotonic() > deadline:
-            status = "timeout"
+            status = "time_limit" if time_limit else "timeout"
             break
         if usage.total >= settings.max_run_tokens:
             status = "budget"
             break
-        request = build_request(settings, effort, messages, tool_schemas)
+        turn_tokens = None
+        if output_limit:
+            left = output_limit - usage.completion
+            if left < MIN_TURN_TOKENS:
+                status = "output_limit"
+                break
+            turn_tokens = min(settings.max_output_tokens, left)
+        request = build_request(settings, effort, messages, tool_schemas, turn_tokens)
         if headers:
             request["extra_headers"] = headers
-        response = _complete(client, request, deadline)
+        try:
+            response = _complete(client, request, deadline,
+                                 timeout=max(1.0, deadline - time.monotonic()) if time_limit else None)
+        except _OutOfTime:
+            status = "time_limit"
+            break
         usage.add(getattr(response, "usage", None))
         choice = response.choices[0]
         message = choice.message
@@ -331,7 +370,10 @@ def run_agent(
 
         if not calls:
             final = content
-            status = "truncated" if getattr(choice, "finish_reason", "") == "length" else "completed"
+            status = "completed"
+            if getattr(choice, "finish_reason", "") == "length":
+                out_of_budget = output_limit and output_limit - usage.completion < MIN_TURN_TOKENS
+                status = "output_limit" if out_of_budget else "truncated"
             break
 
         for call in calls:
@@ -342,6 +384,9 @@ def run_agent(
         if content:
             final = content  # keep the latest commentary in case the run stops early
 
+    if wrap_up and status != "completed":
+        final = _wrap_up(client, settings, messages, tool_schemas, status, usage) or final
+
     result = RunResult(
         mode=mode, status=status, final_message=final, turns=turns,
         seconds=time.monotonic() - started, usage=usage, model=settings.model, effort=effort,
@@ -349,6 +394,24 @@ def run_agent(
     )
     result.cost = usage.cost(settings)
     return result
+
+
+def _wrap_up(client: Any, settings: Settings, messages: list[dict], tool_schemas: list[dict],
+             status: str, usage: Usage) -> str | None:
+    """Ask a run that stopped early for its final message. Returns None if that fails too."""
+    reason = WRAP_UP_REASONS.get(status, "limit")
+    messages.append({"role": "user", "content": WRAP_UP.format(reason=reason)})
+    request = build_request(settings, "none", messages, tool_schemas)
+    request["max_tokens"] = WRAP_UP_TOKENS
+    if tool_schemas:
+        request["tool_choice"] = "none"
+    try:
+        response = _complete(client, request, time.monotonic() + WRAP_UP_SECONDS,
+                             timeout=WRAP_UP_SECONDS)
+    except (DeputyError, _OutOfTime):
+        return None
+    usage.add(getattr(response, "usage", None))
+    return (response.choices[0].message.content or "").strip() or None
 
 
 def parallel_passes(task: str, settings: Settings, client_factory: Callable[[], Any], *,
@@ -359,7 +422,9 @@ def parallel_passes(task: str, settings: Settings, client_factory: Callable[[], 
 
     def one(lens: str) -> RunResult:
         return run_agent(task, settings, client_factory(), mode=mode, context=context,
-                         effort=effort, lens=lens, max_turns=min(max_turns, settings.max_turns))
+                         effort=effort, lens=lens, max_turns=min(max_turns, settings.max_turns),
+                         time_limit=settings.lens_timeout, output_limit=settings.lens_max_output,
+                         wrap_up=True)
 
     with ThreadPoolExecutor(max_workers=len(lenses)) as pool:
         results = list(pool.map(one, lenses))
@@ -370,7 +435,12 @@ def parallel_passes(task: str, settings: Settings, client_factory: Callable[[], 
     parts = [header.format(model=settings.model)]
     for lens, result in zip(lenses, results):
         title = f"Lens: {lens}" if lens else "General"
-        parts.append(f"\n=== {title} [{result.stats_line()}] ===\n{result.final_message.strip()}")
+        note = ""
+        if result.status != "completed":
+            note = (f"NOTE: this lens stopped at its {WRAP_UP_REASONS.get(result.status, 'limit')} "
+                    "and reported only what it had checked, so it may have missed things.\n")
+        parts.append(f"\n=== {title} [{result.stats_line()}] ===\n{note}"
+                     f"{result.final_message.strip() or '(no report)'}")
     return "\n".join(parts), total, total.cost(settings)
 
 

@@ -29,6 +29,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 - `bench/run.py`: `review` and `delegate` configs, a Windows cleanup fix, and the first Opus results
   in `bench/results/2026-10-24-opus`.
 
+### Changed
+
+- **Each `review` and `consult` lens is capped.** A lens stops after `DEPUTY_LENS_TIMEOUT` seconds
+  (default 300) or `DEPUTY_LENS_MAX_OUTPUT_TOKENS` output tokens, thinking included (default
+  32,000), then writes up what it already checked in one short call without tools or thinking.
+  Its section says it stopped early and ends with `NOT CHECKED:`. In the benchmark one reviewer
+  thought for 73k tokens and 23 minutes; the others took 90–242 s.
+
 ### Fixed
 
 - A provider's own key variable is now only sent to that provider's host. Before, a custom

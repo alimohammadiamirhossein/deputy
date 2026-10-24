@@ -35,7 +35,11 @@ Everything that is not in the [README](../README.md). For how Claude should use 
 - `thinking` is `high` (default) or `max`.
 - `review` without `diff` reviews uncommitted changes (staged and unstaged) against `HEAD`, plus
   untracked files; with `base` it compares against that revision.
-- `consult` and `review` run one independent pass per lens, in parallel.
+- `consult` and `review` run one independent pass per lens, in parallel. Each lens stops after
+  `DEPUTY_LENS_TIMEOUT` seconds or `DEPUTY_LENS_MAX_OUTPUT_TOKENS` output tokens (thinking
+  included), whichever comes first. It then gets one short call, without tools or thinking, to
+  write up what it already checked; its section is marked as stopped early and ends with a
+  `NOT CHECKED:` line.
 - `my_view` is never sent to the model; it is echoed back so Claude can compare honestly.
 
 Plugin slash commands: `/deputy:consult`, `/deputy:review`, `/deputy:investigate`,
@@ -71,6 +75,8 @@ All settings are environment variables. The plugin sets the first four for you.
 | `DEPUTY_MAX_RUN_TOKENS` | `2000000` | Token budget per run |
 | `DEPUTY_MAX_OUTPUT_TOKENS` | `16384` | Output limit per response |
 | `DEPUTY_RUN_TIMEOUT` | `1800` | Seconds per run |
+| `DEPUTY_LENS_TIMEOUT` | `300` | Seconds per `review` or `consult` lens before it must write up |
+| `DEPUTY_LENS_MAX_OUTPUT_TOKENS` | `32000` | Output tokens (thinking included) per `review` or `consult` lens |
 | `DEPUTY_COMMAND_TIMEOUT` | `180` | Seconds per shell command |
 | `DEPUTY_KEEP_REASONING` | `true` | Send the model's reasoning back between tool calls |
 | `DEPUTY_PRICE_INPUT` / `_CACHED` / `_OUTPUT` | DeepInfra prices | USD per 1M tokens, for cost estimates |
@@ -260,6 +266,7 @@ Claude is a trademark of Anthropic, PBC; DeepSeek is a trademark of its owner.
 | Deputy missing in Claude Code | Check `/plugin`; make sure `uvx` is on your PATH; restart Claude Code |
 | Slow first start on Windows | Antivirus scans the new files once; later starts are fast |
 | Thinking seems off | Run `deputy doctor`; make sure `DEPUTY_THINKING` is not `none` |
+| A review lens "stopped at its time limit" | It hit `DEPUTY_LENS_TIMEOUT`; raise it (or `DEPUTY_LENS_MAX_OUTPUT_TOKENS`) for very large diffs |
 
 ## Roadmap
 
