@@ -1,0 +1,9 @@
+{
+  "focus": "Add page_count(total, per_page) so the API can report how many pages a result has. A partial last page counts as a page, and 0 items means 0 pages.",
+  "bug": {
+    "file": "pager.py",
+    "line_contains": "total // per_page + 1",
+    "keywords": ["exact multiple", "multiple of", "evenly", "0 items", "zero items", "total=0", "total == 0", "one too many", "extra page", "off-by-one", "off by one", "ceil"],
+    "what": "Counts one page too many when total is an exact multiple of per_page, and 1 page for 0 items."
+  }
+}

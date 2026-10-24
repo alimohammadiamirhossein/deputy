@@ -1,0 +1,9 @@
+{
+  "focus": "Add format_bytes(n) for the storage dashboard: n is a byte count (an int >= 0), shown with binary units and one decimal, as in the docstring. Negative sizes raise ValueError.",
+  "bug": {
+    "file": "units.py",
+    "line_contains": "if n <= 1024:",
+    "keywords": ["1024 b", "exactly 1024", "1024 bytes", "<=", "boundary", "off-by-one", "off by one", "inclusive"],
+    "what": "Uses <= instead of <, so exactly 1024 bytes shows as '1024 B' instead of '1.0 KiB', against the docstring."
+  }
+}

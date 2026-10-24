@@ -3,6 +3,25 @@
 All notable changes to Deputy. The format follows [Keep a Changelog](https://keepachangelog.com/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Review benchmark.** `bench/review_eval.py` runs Deputy's `review` without Claude on planted
+  bugs and on clean diffs. Each planted bug has a clean twin, the same change done right. It
+  reports the catch rate, the false-alarm rate on clean diffs (at any severity and at major or
+  higher), and how often two lenses agree. `--check` proves each planted bug is real before any
+  API call. First results are in `bench/results/2026-10-24-review` and in the README.
+- A demo GIF at the top of the README, replaying one benchmark review (`docs/demo/make_gif.py`).
+- `bench/run.py`: `review` and `delegate` configs, a Windows cleanup fix, and the first Opus results
+  in `bench/results/2026-10-24-opus`.
+
+### Fixed
+
+- The MCP `initialize` handshake now reports Deputy's version instead of the MCP SDK's
+  ([#4](https://github.com/alimohammadiamirhossein/deputy/pull/4), fixes
+  [#1](https://github.com/alimohammadiamirhossein/deputy/issues/1)).
+
 ## [0.2.0] - 2026-10-24
 
 ### Added

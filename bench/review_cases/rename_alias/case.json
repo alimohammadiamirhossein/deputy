@@ -1,0 +1,3 @@
+{
+  "focus": "Rename get_user to find_user. Keep get_user as a deprecated alias that warns, and move our own callers to the new name. No other behavior change."
+}

@@ -1,0 +1,9 @@
+{
+  "focus": "Overrides used to replace whole top-level sections, so overriding db.host also dropped db.port. Merge nested dicts key by key instead. Any non-dict override still replaces the value. load() is called once per deployment, and DEFAULTS must never change.",
+  "bug": {
+    "file": "settings.py",
+    "line_contains": "result[key].update(",
+    "keywords": ["mutat", "shallow", "shared", "alias", "in place", "in-place", "same object", "same dict", "leak"],
+    "what": "dict(base) is a shallow copy, so result[key].update() changes the nested dicts inside DEFAULTS and one deployment's overrides leak into the next load()."
+  }
+}

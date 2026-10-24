@@ -18,6 +18,10 @@ code.**
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/alimohammadiamirhossein/deputy/blob/main/LICENSE)
 [![MCP](https://img.shields.io/badge/protocol-MCP-purple.svg)](https://modelcontextprotocol.io/)
 
+<img src="https://raw.githubusercontent.com/alimohammadiamirhossein/deputy/main/docs/demo/review.gif" alt="Deputy reviews an uncommitted change in Claude Code: two cheap reviewers flag an off-by-one bug for a tenth of a cent, and Claude confirms it with the repro before fixing it" width="820">
+
+<sub>A replay of one benchmark case. Deputy's findings, time and cost, the repro and the test run are real.</sub>
+
 </div>
 
 ```bash
@@ -66,6 +70,28 @@ What this shows, and what it doesn't:
   much as writing the code itself.
 - **Small sample.** One run per config. Full table:
   [bench/results/2026-10-24-opus](https://github.com/alimohammadiamirhossein/deputy/blob/main/bench/results/2026-10-24-opus/results.md).
+
+### Does `review` catch bugs, and how often does it cry wolf?
+
+Deputy's `review` on its own, without Claude, on 6 changes with a planted bug and 8 clean changes.
+Each planted bug has a clean twin, the same change done right. Five runs each
+([bench/review_cases](https://github.com/alimohammadiamirhossein/deputy/tree/main/bench/review_cases)):
+
+| Diffs | Reviews | Flagged | Flagged major or critical | Mean cost | Mean time |
+|---|---|---|---|---|---|
+| Planted bug | 30 | **30/30 caught** | 30/30 | $0.0020 | 50 s |
+| Clean | 39 | 23/39 | 11/39 | $0.0064 | 3.5 min |
+
+- **Every planted bug was caught,** at major or critical severity, by both reviewers every time.
+- **Clean code still draws findings,** so Claude has to check each one. Most are minor (55 of
+  72), but 28% of clean reviews included a major claim.
+- **Many of those findings are fair,** such as a test that can't fail or an entry point no test
+  covers. Some are wrong. Six called a new file "not part of the change" because Deputy labels new
+  files as untracked.
+- **Agreement is weak evidence on clean code.** Both reviewers flagged the same spot on 31% of
+  clean diffs, so a finding isn't real just because two reviewers report it.
+- Every finding on a clean diff is listed in
+  [the results](https://github.com/alimohammadiamirhossein/deputy/blob/main/bench/results/2026-10-24-review/results.md).
 
 ## What it does
 

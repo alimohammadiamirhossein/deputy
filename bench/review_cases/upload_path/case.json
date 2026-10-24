@@ -1,0 +1,9 @@
+{
+  "focus": "Stop path traversal in read_upload. Names come straight from the request URL, so any name that would resolve to a file outside the upload folder must raise ValueError. Only this app writes to the upload folder.",
+  "bug": {
+    "file": "uploads.py",
+    "line_contains": "if \"..\" in Path(name).parts:",
+    "keywords": ["absolute", "symlink", "drive", "/etc/passwd", "anchor", "root path"],
+    "what": "Only '..' parts are rejected, so an absolute name such as /etc/passwd replaces the base folder when joined."
+  }
+}

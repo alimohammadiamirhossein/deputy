@@ -1,0 +1,9 @@
+{
+  "focus": "Make push() retry when the inventory service is briefly unreachable (ConnectionError): at most 3 attempts with exponential backoff. Other errors must propagate at once, and if every attempt fails the caller must still get the error. The service deduplicates records by id, so sending a record twice is safe.",
+  "bug": {
+    "file": "retry.py",
+    "line_contains": "log.warning(\"giving up",
+    "keywords": ["swallow", "returns none", "return none", "returning none", "implicitly", "silently", "re-raise", "reraise", "never raise", "not raise", "no exception", "last_error"],
+    "what": "When every attempt fails, retry logs a warning and returns None instead of raising, so push() reports success."
+  }
+}

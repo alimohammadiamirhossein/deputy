@@ -1,0 +1,9 @@
+{
+  "focus": "quote() is called many times per checkout page with the same arguments, so cache its results with a small memoize decorator. PRICES and CURRENCY_RATES are fixed when the module loads and the set of SKUs is small, so an unbounded cache that never expires is fine.",
+  "bug": {
+    "file": "cache.py",
+    "line_contains": "key = args",
+    "keywords": ["kwargs", "keyword"],
+    "what": "The cache key ignores keyword arguments, so quote('apple', qty=4) returns the cached result of quote('apple')."
+  }
+}
