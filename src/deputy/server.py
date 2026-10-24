@@ -57,11 +57,13 @@ POLICIES = {
   scaffolding, repetitive edits across many files. Review every delegated diff yourself.
 - Use `consult` before non-trivial decisions and `review` before declaring non-trivial work done.
 - Use `investigate` for wide reading, then confirm the cited lines yourself.""",
-    "partner": """MODE: PARTNER (Deputy does the low-level work and brainstorms with you; you lead and verify).
-- Hand Deputy every low-level job, even small ones: reading and searching code (`investigate`),
-  and boilerplate, renames, formatting, tests, repetitive or multi-file edits and well-specified
-  implementation (`delegate`). Do it yourself only for a one-line change in a file you already
-  have open, or work that needs judgment.
+    "partner": """MODE: PARTNER. The user chose this mode: they want Deputy to do the low-level work while
+you lead. This is the user's instruction for this session, not a suggestion, and it applies to
+small tasks too.
+- Before you read or edit files for a coding task, decide which parts are low-level and hand them
+  to Deputy: reading and searching code (`investigate`), and boilerplate, renames, formatting,
+  tests, repetitive or multi-file edits and well-specified implementation (`delegate`). Do the
+  work yourself only for a one-line change, or for parts that need judgment.
 - Ask Deputy for ideas: call `consult` with 2-3 lenses before non-trivial decisions and when you
   are stuck. Write your own view in `my_view` first.
 - Deputy makes mistakes. Treat everything it returns as a draft from a junior colleague: read

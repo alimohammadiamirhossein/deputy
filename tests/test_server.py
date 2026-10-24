@@ -47,7 +47,8 @@ def test_instructions_follow_the_mode():
     lean = server.build_instructions("lean")
     assert "MODE: LEAN" in lean and "big enough to pay off" in lean and "Write changes of a few lines yourself" in lean
     partner = server.build_instructions("partner")
-    assert "MODE: PARTNER" in partner and "every low-level job, even small ones" in partner
+    assert "MODE: PARTNER" in partner and "the user's instruction" in partner
+    assert "Before you read or edit files" in partner and "small tasks too" in partner
     assert "call `consult`" in partner and "Deputy makes mistakes" in partner
     assert server.build_instructions("nonsense") == accuracy
 
