@@ -60,6 +60,20 @@ gain. Mean cost per task was $0.18 for Opus alone, $0.31 with `review` (Deputy's
 and $0.19 with `delegate` (Deputy's share $0.0015). Review findings led Claude to harden the code
 in 3 of 4 tasks. Harder tasks, where Opus sometimes fails, and more repeats are the next step.
 
+## Deputy alone as the worker
+
+`bench/delegate_eval.py` hands each task to Deputy's coding agent (what `delegate` runs) without
+Claude, then runs the hidden tests, so it measures the worker's speed and correctness on its own:
+
+```bash
+python bench/delegate_eval.py --thinking high medium low --repeats 3
+```
+
+[results/2026-10-24-delegate-thinking](results/2026-10-24-delegate-thinking/results.md): with
+thinking `high`, Deputy passed 12 of 12 runs with a median of 29 s per task, about as fast as Opus
+alone. `low` (11/12, 20 s) and `medium` (8/12, 27 s) saved little time and failed more often, so
+the worker keeps `high`.
+
 ## Reading the results
 
 - Compare **pass rate** first, then **total cost** (Claude + Deputy) and time.

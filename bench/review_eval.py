@@ -33,7 +33,7 @@ from datetime import datetime
 from pathlib import Path
 
 from deputy.agent import DEFAULT_REVIEW_LENSES, DeputyError, review
-from deputy.config import load_settings
+from deputy.config import EFFORTS, load_settings
 from deputy.diff import collect_diff
 from deputy.server import make_client
 from deputy.workspace import Workspace
@@ -346,7 +346,7 @@ def main() -> int:
     parser.add_argument("--jobs", type=int, default=4, help="reviews at once (default: 4)")
     parser.add_argument("--lenses", nargs="*",
                         help=f"review lenses (default: Deputy's {DEFAULT_REVIEW_LENSES})")
-    parser.add_argument("--thinking", choices=["high", "max"],
+    parser.add_argument("--thinking", choices=EFFORTS,
                         help="default: DEPUTY_THINKING, else high")
     parser.add_argument("--check", action="store_true",
                         help="only check that the cases are sound; no API calls")
