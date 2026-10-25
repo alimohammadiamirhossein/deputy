@@ -1,4 +1,5 @@
 import asyncio
+import json
 import sys
 from pathlib import Path
 
@@ -127,3 +128,21 @@ def test_file_uris_become_paths():
     else:
         assert server._uri_to_path("file:///home/me/my%20app") == Path("/home/me/my app")
     assert server._uri_to_path("https://example.com") is None
+
+
+def test_plugin_does_not_pin_the_workspace():
+    env = json.loads((Path(__file__).parents[1] / ".claude-plugin" / "plugin.json")
+                     .read_text(encoding="utf-8"))["mcpServers"]["deputy"]["env"]
+    # Pinning (DEPUTY_WORKSPACE) would make Deputy ignore project_dir and the client's roots.
+    assert "DEPUTY_WORKSPACE" not in env
+    assert env["CLAUDE_PROJECT_DIR"] == "${CLAUDE_PROJECT_DIR}"
+
+
+def test_project_dir_overrides_claude_project_dir(tmp_path: Path, monkeypatch):
+    first, second = tmp_path / "first", tmp_path / "second"
+    first.mkdir()
+    second.mkdir()
+    monkeypatch.delenv("DEPUTY_WORKSPACE", raising=False)
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(first))
+    assert f"workspace: {first.resolve()}" in asyncio.run(server.status())
+    assert f"workspace: {second.resolve()}" in asyncio.run(server.status(project_dir=str(second)))

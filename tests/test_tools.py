@@ -115,3 +115,14 @@ def test_run_command_timeout(project: Path):
     command = "sleep 10" if os.name != "nt" else "Start-Sleep -Seconds 10; sleep 10"
     output = call(ctx, "run_command", command=command)
     assert "timeout" in output
+
+
+def test_check_root_refuses_the_plugin_folder(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    cache = tmp_path / ".claude" / "plugins" / "cache" / "deputy" / "deputy" / "0.3.0"
+    cache.mkdir(parents=True)
+    with pytest.raises(WorkspaceError, match="plugin folder"):
+        check_root(cache)
+    project = tmp_path / "project"
+    project.mkdir()
+    assert check_root(project) == project.resolve()

@@ -32,6 +32,9 @@ def check_root(root: Path) -> Path:
         raise WorkspaceError(
             "refusing to use your home folder as the workspace; open Claude Code in a project folder"
         )
+    # A plugin server whose project folder was not passed in may start in its install folder.
+    if is_within(resolved, Path.home() / ".claude" / "plugins"):
+        raise WorkspaceError(f"refusing to use Claude Code's plugin folder as the workspace: {resolved}")
     return resolved
 
 

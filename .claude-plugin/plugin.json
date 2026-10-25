@@ -21,7 +21,7 @@
         "DEPUTY_THINKING": "${user_config.thinking}",
         "DEPUTY_MODE": "${user_config.mode}",
         "DEPUTY_LEAD_MODEL": "${user_config.lead_model}",
-        "DEPUTY_WORKSPACE": "${CLAUDE_PROJECT_DIR}"
+        "CLAUDE_PROJECT_DIR": "${CLAUDE_PROJECT_DIR}"
       }
     }
   },
