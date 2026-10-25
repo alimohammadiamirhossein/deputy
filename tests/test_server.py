@@ -41,7 +41,9 @@ def test_tools_are_registered():
 def test_instructions_follow_the_mode():
     accuracy = server.build_instructions("accuracy")
     assert "Do NOT use `delegate` unless the user explicitly asks" in accuracy
-    assert "call `review`" in accuracy
+    assert "Call `review` only before you finish a risky or large change" in accuracy
+    for mode in server.POLICIES:  # reviews are for risky changes in every mode
+        assert "risky or large" in server.build_instructions(mode)
     assert "low-risk mechanical work" in server.build_instructions("balanced")
     assert "`delegate` well-specified coding work" in server.build_instructions("savings")
     lean = server.build_instructions("lean")

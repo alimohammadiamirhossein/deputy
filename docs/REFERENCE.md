@@ -51,7 +51,7 @@ Plugin slash commands: `/deputy:consult`, `/deputy:review`, `/deputy:investigate
 | Mode | Claude writes | Deputy does |
 |---|---|---|
 | `accuracy` (default) | All code | Second opinions, reviews, wide searches. Delegation only on request |
-| `lean` | Small changes, design, tricky logic | Reading (`investigate`) and well-specified work big enough to pay off; `review` only on non-trivial changes, `consult` only at real decision points |
+| `lean` | Small changes, design, tricky logic | Reading (`investigate`) and well-specified work big enough to pay off; `review` only on risky or large changes, `consult` only at real decision points |
 | `balanced` | Logic and risky code | Also low-risk mechanical work |
 | `partner` | Design, tricky logic, final decisions | Every low-level job, even small ones, plus ideas through `consult`; Claude reads every diff and checks every idea |
 | `savings` | Plans and reviews | Most well-specified coding |

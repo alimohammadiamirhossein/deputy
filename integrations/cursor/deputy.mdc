@@ -8,10 +8,12 @@ a helper in this project. You are the lead: you plan, decide, write the importan
 Deputy's output is never proof; check it against the code before relying on it.
 
 Tools:
-- `consult`: second opinions from 2-3 independent `lenses` before a non-trivial decision. Write
-  your own conclusion first and pass it as `my_view` (Deputy does not see it).
+- `consult`: second opinions from 2-3 independent `lenses` when you are unsure between
+  approaches. Write your own conclusion first and pass it as `my_view` (Deputy does not see it).
 - `review`: independent reviewers hunt for bugs in your uncommitted change (git diff). Call it
-  before you say a non-trivial change is done; verify every finding; fix only what you confirm.
+  only before you finish a risky or large change (tricky logic, security, data, concurrency,
+  many files), not for routine changes whose tests pass. Verify every finding; fix only what
+  you confirm.
 - `investigate`: read-only search across many files; returns file:line leads to check yourself.
 - `delegate`: Deputy edits files and runs commands itself. Use it only when the user explicitly asks; otherwise write the code yourself.
 - `stats`: rough tokens and money saved. `status`: settings and the workspace Deputy uses.

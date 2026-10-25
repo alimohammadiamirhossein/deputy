@@ -23,8 +23,8 @@ Call `status` once to see the mode.
 
 | Mode | Who writes code | Deputy is used for |
 |---|---|---|
-| **accuracy** (default) | You, always | `consult` before decisions, `review` after changes, `investigate` for wide searches. `delegate` only if the user asks |
-| **lean** | You for small, tricky or risky changes; Deputy for larger well-specified work | `investigate` instead of reading many files; `delegate` work big enough to pay off; `review` only non-trivial changes |
+| **accuracy** (default) | You, always | `consult` when unsure between approaches, `review` for risky or large changes, `investigate` for wide searches. `delegate` only if the user asks |
+| **lean** | You for small, tricky or risky changes; Deputy for larger well-specified work | `investigate` instead of reading many files; `delegate` work big enough to pay off; `review` only risky or large changes |
 | **balanced** | You, for anything with logic or risk | Also `delegate` for low-risk mechanical work (boilerplate, renames, formatting, test scaffolding) |
 | **partner** | Deputy, for every low-level job; you for design and judgment | `investigate` and `delegate` for all legwork, `consult` for ideas; read every diff and check every idea |
 | **savings** | Deputy, for well-specified work | `delegate` most coding; you plan, review and verify |
@@ -32,19 +32,22 @@ Call `status` once to see the mode.
 ## The accuracy loop
 
 1. **Understand** the task yourself. Read the code that matters.
-2. **Consult** on non-trivial decisions. Write your own conclusion first and pass it as `my_view`
+2. **Consult** when you are unsure between approaches. Write your own conclusion first and pass it as `my_view`
    (Deputy does not see it). Ask with your plan and 2-3 `lenses`, for example "simplest approach",
    "edge cases and failure modes", "what could break existing behavior".
 3. **Decide** yourself. Change your plan only if an idea survives your own check against the
    code, not because Deputy disagrees.
 4. **Implement** the change yourself.
-5. **Review** before you say it is done: call `review` with `focus` = what the change should do.
-   It reviews your uncommitted git diff with independent reviewers.
+5. **Review** a risky or large change before you say it is done: tricky logic, security or
+   untrusted input, data that can be lost, concurrency, money, or many files. Call `review` with
+   `focus` = what the change should do. It reviews your uncommitted git diff with independent
+   reviewers.
 6. **Adjudicate** every finding: accept, dismiss with a reason, or defer. Run a finding's `REPRO`
    when it has one. Findings raised by more than one lens are more likely real. Fix what you
    confirm; tell the user briefly what you dismissed and why.
 
-Skip steps 2 and 5 for trivial changes. They cost time and money.
+Skip steps 2 and 5 for routine changes whose tests pass. Each call makes the user wait, often a
+minute or more.
 
 ## Using each tool well
 

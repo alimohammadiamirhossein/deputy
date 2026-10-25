@@ -37,6 +37,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
   light thinking. Its section says it stopped early and ends with `NOT CHECKED:`; a reviewer
   reports only problems it confirmed and lists open suspicions there. In the benchmark one reviewer
   thought for 73k tokens and 23 minutes; the others took 90–242 s.
+- **Claude calls `review` and `consult` less often.** Every mode, the playbooks and the skill
+  descriptions now say to review only risky or large changes (tricky logic, security or untrusted
+  input, data, concurrency, money, many files) and to consult only when unsure between
+  approaches. Before, accuracy mode asked for both on every non-trivial task, and each call makes
+  the user wait, often a minute or more.
 
 ### Fixed
 

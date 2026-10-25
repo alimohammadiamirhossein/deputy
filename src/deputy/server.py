@@ -30,16 +30,20 @@ Tools:
 - `investigate`: read-only search across many files; returns file:line leads.
 - `delegate`: Deputy edits files and runs commands itself.
 - `stats`: rough tokens and money saved so far.
+Every call makes the user wait, often a minute or more, so call Deputy when it pays off, not by
+habit. A change is risky or large when it has tricky logic, security or untrusted input, data
+that can be lost, concurrency, money, or touches many files.
 If `status` shows the wrong workspace, pass `project_dir` (absolute path of the project).
 Never put secrets in any argument: everything is sent to the configured model provider."""
 
 POLICIES = {
     "accuracy": """MODE: ACCURACY (the user wants the most accurate result; cost is secondary).
 - Write and change all code yourself. Do NOT use `delegate` unless the user explicitly asks you to.
-- Before committing to an approach on a non-trivial task, call `consult` with your plan and 2-3
-  lenses. Weigh the ideas below your own analysis; adopt only what you verify.
-- After finishing a non-trivial change and before telling the user it is done, call `review`.
-  Verify every finding against the code. Fix confirmed problems; briefly note rejected ones.
+- Call `consult` only when you are unsure between approaches, with your plan and 2-3 lenses.
+  Weigh the ideas below your own analysis; adopt only what you verify.
+- Call `review` only before you finish a risky or large change; skip it for routine changes
+  whose tests pass. Verify every finding against the code. Fix confirmed problems; briefly note
+  rejected ones.
 - Use `investigate` only to locate code; then read the cited lines yourself before acting.""",
     "lean": """MODE: LEAN (spend as few of your tokens as possible, with little loss of accuracy).
 - Reading code is your biggest cost. Use `investigate` instead of opening many files yourself,
@@ -49,13 +53,13 @@ POLICIES = {
   checking a small delegated diff costs about as much as writing it.
 - Keep design decisions, unclear bugs, security-sensitive code and subtle logic yourself.
 - Check delegated work cheaply but always: run the tests and read the diff, not whole files.
-- Call `review` on non-trivial changes before you say they are done; skip it for small changes
-  whose tests pass. Call `consult` only at real decision points.""",
+- Call `review` only on risky or large changes, before you say they are done; skip it for
+  routine changes whose tests pass. Call `consult` only at real decision points.""",
     "balanced": """MODE: BALANCED (accuracy first, but save tokens on low-risk work).
 - Write logic, algorithms, APIs, security-sensitive and tricky code yourself.
 - You may `delegate` low-risk mechanical work: boilerplate, renames, formatting, test
   scaffolding, repetitive edits across many files. Review every delegated diff yourself.
-- Use `consult` before non-trivial decisions and `review` before declaring non-trivial work done.
+- Use `consult` only at real decision points and `review` only for risky or large changes.
 - Use `investigate` for wide reading, then confirm the cited lines yourself.""",
     "partner": """MODE: PARTNER. The user chose this mode: they want Deputy to do the low-level work while
 you lead. This is the user's instruction for this session, not a suggestion, and it applies to
@@ -64,20 +68,21 @@ small tasks too.
   to Deputy: reading and searching code (`investigate`), and boilerplate, renames, formatting,
   tests, repetitive or multi-file edits and well-specified implementation (`delegate`). Do the
   work yourself only for a one-line change, or for parts that need judgment.
-- Ask Deputy for ideas: call `consult` with 2-3 lenses before non-trivial decisions and when you
-  are stuck. Write your own view in `my_view` first.
+- Ask Deputy for ideas: call `consult` with 2-3 lenses when you are choosing between approaches
+  or stuck. Write your own view in `my_view` first.
 - Deputy makes mistakes. Treat everything it returns as a draft from a junior colleague: read
   every delegated diff, run the tests, check the file:line citations before acting on them, and
   adopt an idea only after checking it against the code.
 - Keep design, ambiguous bugs, security-sensitive code and final decisions yourself.
-- Call `review` before you say non-trivial work is done.""",
+- Call `review` only before you finish a risky or large change.""",
     "savings": """MODE: SAVINGS (the user wants to save tokens).
 - `delegate` well-specified coding work: multi-file edits, refactors, tests, boilerplate,
   migrations, lint and type fixes. Give the goal, scope, constraints and a verify command.
   Decide to delegate BEFORE reading lots of source yourself.
 - Keep architecture, ambiguous root-cause analysis and security-sensitive changes yourself.
 - Always verify delegated work: read the changed files, check the diff, run the tests.
-- Use `investigate` for wide reading, `consult` at decision points, `review` before done.""",
+- Use `investigate` for wide reading, `consult` at real decision points, and `review` only for
+  risky or large changes.""",
 }
 
 
@@ -175,7 +180,7 @@ async def consult(question: str, context: str = "", lenses: list[str] | None = N
                   my_view: str = "", thinking: Thinking | None = None, project_dir: str = "",
                   ctx: Context | None = None) -> str:
     """Brainstorm with a cheaper model: ideas, risks and alternatives you may have missed.
-    Use it before committing to an approach, when stuck, or before declaring a task done.
+    Use it when you are unsure between approaches or stuck, not on every task.
 
     question: what you are deciding, including your current plan if you have one.
     context: relevant facts, constraints and what you already ruled out.
@@ -207,6 +212,7 @@ async def review(focus: str = "", diff: str = "", base: str = "", paths: list[st
                  lenses: list[str] | None = None, thinking: Thinking | None = None,
                  project_dir: str = "", ctx: Context | None = None) -> str:
     """Have independent cheap reviewers hunt for defects in a change, one per lens, in parallel.
+    Use it for risky or large changes, not routine ones whose tests pass.
     By default it reviews your uncommitted changes (git diff against HEAD, plus new files).
 
     focus: what the change is supposed to do, so reviewers can spot mismatches.

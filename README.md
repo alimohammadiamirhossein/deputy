@@ -104,7 +104,7 @@ run a much cheaper model as a helper inside your project:
 
 | Tool | What it does |
 |---|---|
-| **`review`** | Independent reviewers hunt for bugs in Claude's change before it calls the task done |
+| **`review`** | Independent reviewers hunt for bugs in a risky or large change before Claude calls it done |
 | **`consult`** | Second opinions from 2–4 angles at once, before Claude commits to a plan |
 | **`investigate`** | Reads lots of code and returns `file:line` leads |
 | **`delegate`** | Hands a coding task to the cheap model (off by default; on request, or in savings mode) |
@@ -131,8 +131,8 @@ stored, never code or prompts. Set your lead model with `DEPUTY_LEAD_MODEL` (`op
 
 **Use it for:**
 
-- Non-trivial changes where a missed bug costs more than a cent: logic, edge cases, refactors that
-  touch several files.
+- Risky or large changes, where a missed bug costs more than a minute of waiting: tricky logic,
+  security, data handling, concurrency, refactors that touch several files.
 - A second opinion before Claude commits to a design, without spending Claude tokens on it.
 - Wide reading in a big codebase, such as "where is this setting read?".
 - Well-specified mechanical work (boilerplate, renames, test scaffolding) in `lean`, `balanced`,
@@ -141,7 +141,8 @@ stored, never code or prompts. Set your lead model with `DEPUTY_LEAD_MODEL` (`op
 
 **Skip it for:**
 
-- Trivial edits like typos and one-liners. A review takes a few minutes and adds little there.
+- Routine changes whose tests pass, and trivial edits like typos and one-liners. A review makes
+  you wait and adds little there.
 - Code you may not share with a third party. Deputy sends code to DeepInfra, or to whatever
   endpoint you set in `DEPUTY_BASE_URL` (a local model works too).
 - Final answers. Findings come from a weaker model and include false positives, which is why
@@ -176,7 +177,8 @@ Claude Code asks for your DeepInfra key and stores it in your system's secure st
 /deputy:investigate how does a request reach the database?
 ```
 
-Or just work normally: Claude consults and reviews on its own for non-trivial tasks.
+Or just work normally: Claude calls Deputy on its own when it pays off, and skips reviews on
+routine changes whose tests pass.
 
 ### Cursor and Codex
 

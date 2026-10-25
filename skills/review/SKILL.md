@@ -1,6 +1,6 @@
 ---
 name: review
-description: Have Deputy's cheap reviewers hunt for bugs in your uncommitted change (git diff), then verify each finding yourself. Use after finishing any non-trivial code change and before telling the user it is done, or when the user says "review" or "/deputy:review".
+description: Have Deputy's cheap reviewers hunt for bugs in your uncommitted change (git diff), then verify each finding yourself. Use before finishing a risky or large change (tricky logic, security or untrusted input, data handling, concurrency, money, many files), or when the user says "review" or "/deputy:review". Skip it for routine changes whose tests pass.
 argument-hint: "[what the change should do]"
 ---
 

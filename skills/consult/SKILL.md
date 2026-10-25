@@ -1,6 +1,6 @@
 ---
 name: consult
-description: Get diverse second opinions from Deputy (DeepSeek V4.1 Flash) with ideas, risks and alternatives, then make the final call yourself. Use before committing to an approach on a non-trivial task, when stuck on a recurring problem, or when the user says "consult" or "/deputy:consult".
+description: Get diverse second opinions from Deputy (DeepSeek V4.1 Flash) with ideas, risks and alternatives, then make the final call yourself. Use when unsure between approaches on a non-trivial decision, when stuck on a recurring problem, or when the user says "consult" or "/deputy:consult".
 argument-hint: "<question or plan>"
 ---
 
