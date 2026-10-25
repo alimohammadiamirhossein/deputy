@@ -3,9 +3,12 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import itertools
 import threading
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 from urllib.parse import unquote, urlparse
 from urllib.request import url2pathname
 
@@ -102,6 +105,9 @@ mcp = FastMCP("deputy", instructions=build_instructions(_startup_mode()), log_le
 mcp._mcp_server.version = __version__
 
 _code_lock = threading.Lock()
+# Runs live in their own threads. A cancelled call only sets the run's `cancel` event; the run
+# stops at its next turn or tool call, and the thread is never abandoned while it works.
+_runs = ThreadPoolExecutor(max_workers=8, thread_name_prefix="deputy-run")
 _session_lock = threading.Lock()
 _session_records: list[stats.Record] = []
 
@@ -163,6 +169,49 @@ async def _ready_settings(ctx: Context | None = None, project_dir: str = "") -> 
     return settings
 
 
+async def _in_thread(fn: Callable[[], Any], cancel: threading.Event,
+                     on_done: Callable[[], None] | None = None) -> Any:
+    """Run `fn` in a worker thread. If the client cancels the call, set `cancel` so the run stops
+    at its next step. `on_done` runs when the thread has really finished, not at cancellation."""
+    try:
+        future = _runs.submit(fn)
+    except BaseException:
+        if on_done:
+            on_done()
+        raise
+    if on_done:
+        future.add_done_callback(lambda _: on_done())
+    try:
+        return await asyncio.wrap_future(future)
+    except asyncio.CancelledError:
+        cancel.set()
+        raise
+
+
+def _progress(ctx: Context | None) -> Callable[[str], None] | None:
+    """A thread-safe callback that sends MCP progress notifications, so the client sees that a
+    long call is alive. Clients that did not ask for progress get nothing."""
+    if ctx is None:
+        return None
+    loop = asyncio.get_running_loop()
+    counter = itertools.count(1)
+    lock = threading.Lock()
+
+    def send(message: str) -> None:
+        with lock:
+            step = next(counter)
+        asyncio.run_coroutine_threadsafe(ctx.report_progress(step, None, message), loop)
+
+    return send
+
+
+def _steps(send: Callable[[str], None] | None) -> Callable[[int, str], None] | None:
+    """Adapt run_agent's progress(turn, tool) to a progress message."""
+    if send is None:
+        return None
+    return lambda turn, tool: send(f"turn {turn}, {tool or 'thinking'}")
+
+
 def _finish(tool: str, text: str, usage: Usage, cost: float | None, settings: Settings) -> str:
     """Record the run for the savings estimate and append a one-line summary."""
     record = stats.estimate(tool, usage, cost, text, settings)
@@ -194,9 +243,11 @@ async def consult(question: str, context: str = "", lenses: list[str] | None = N
     analysis, check them against the code, and adopt only what holds up."""
     settings = await _ready_settings(ctx, project_dir)
     try:
-        text, usage, cost = await asyncio.to_thread(
+        cancel = threading.Event()
+        text, usage, cost = await _in_thread(partial(
             run_consult, question, settings, lambda: make_client(settings), context=context,
-            lenses=lenses, effort=thinking or settings.lens_effort)
+            lenses=lenses, effort=thinking or settings.lens_effort, cancel=cancel,
+            progress=_progress(ctx)), cancel)
     except (DeputyError, WorkspaceError) as exc:
         raise ToolError(f"Deputy failed: {exc}") from None
     if my_view.strip():
@@ -231,9 +282,11 @@ async def review(focus: str = "", diff: str = "", base: str = "", paths: list[st
     try:
         text = diff.strip() or await asyncio.to_thread(
             collect_diff, Workspace(settings.workspace), base=base, paths=paths)
-        result, usage, cost = await asyncio.to_thread(
+        cancel = threading.Event()
+        result, usage, cost = await _in_thread(partial(
             run_review, text, settings, lambda: make_client(settings), focus=focus,
-            lenses=lenses, effort=thinking or settings.lens_effort)
+            lenses=lenses, effort=thinking or settings.lens_effort, cancel=cancel,
+            progress=_progress(ctx)), cancel)
     except (DeputyError, DiffError, WorkspaceError) as exc:
         raise ToolError(f"Deputy review failed: {exc}") from None
     return _finish("review", result, usage, cost, settings)
@@ -251,9 +304,11 @@ async def investigate(question: str, context: str = "", thinking: Thinking | Non
     project_dir: absolute path of the project, only if Deputy picked the wrong folder."""
     settings = await _ready_settings(ctx, project_dir)
     try:
-        result = await asyncio.to_thread(
+        cancel = threading.Event()
+        result = await _in_thread(partial(
             run_agent, question, settings, make_client(settings), mode="readonly",
-            context=context, effort=thinking or settings.effort, workdir=workdir)
+            context=context, effort=thinking or settings.effort, workdir=workdir, cancel=cancel,
+            progress=_steps(_progress(ctx))), cancel)
     except (DeputyError, WorkspaceError) as exc:
         raise ToolError(f"Deputy failed: {exc}") from None
     return _finish("investigate", result.to_text(), result.usage, result.cost, settings)
@@ -278,14 +333,16 @@ async def delegate(task: str, context: str = "", thinking: Thinking | None = Non
     settings = await _ready_settings(ctx, project_dir)
     if not _code_lock.acquire(blocking=False):
         raise ToolError("Deputy is already running a coding task; wait for it to finish first.")
+    # The lock is released when the run's thread ends, not when the call returns: a cancelled
+    # run keeps editing until its next step, and a second run must not start before that.
+    cancel = threading.Event()
     try:
-        result = await asyncio.to_thread(
+        result = await _in_thread(partial(
             run_agent, task, settings, make_client(settings), mode="code", context=context,
-            effort=thinking or settings.effort, workdir=workdir)
+            effort=thinking or settings.effort, workdir=workdir, cancel=cancel,
+            progress=_steps(_progress(ctx))), cancel, on_done=_code_lock.release)
     except (DeputyError, WorkspaceError) as exc:
         raise ToolError(f"Deputy failed: {exc}") from None
-    finally:
-        _code_lock.release()
     return _finish("delegate", result.to_text(), result.usage, result.cost, settings)
 
 

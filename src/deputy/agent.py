@@ -1,6 +1,7 @@
 """The deputy's agent loop: an OpenAI-compatible tool-calling loop in the workspace."""
 from __future__ import annotations
 
+import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -175,7 +176,8 @@ class Usage:
 @dataclass
 class RunResult:
     mode: str
-    status: str  # completed | max_turns | budget | timeout | truncated | time_limit | output_limit
+    # completed | max_turns | budget | timeout | truncated | time_limit | output_limit | cancelled
+    status: str
     final_message: str
     turns: int
     seconds: float
@@ -308,10 +310,13 @@ def run_agent(
     time_limit: float | None = None,
     output_limit: int | None = None,
     wrap_up: bool = False,
+    cancel: threading.Event | None = None,
 ) -> RunResult:
     """Run the tool loop. `time_limit` (seconds) and `output_limit` (output tokens, thinking
     included) cap this run below the global limits. With `wrap_up`, a run that stops early gets
-    one last call, without tools and with light thinking, to write up what it already checked."""
+    one last call, without tools and with light thinking, to write up what it already checked.
+    The run stops before its next turn or tool call once `cancel` is set. `progress(turn, tool)`
+    is called at the start of each turn (tool "") and before each tool call."""
     if not task or not task.strip():
         raise DeputyError("task must not be empty")
     effort = effort or settings.effort
@@ -340,6 +345,11 @@ def run_agent(
     headers = {"x-grok-conv-id": uuid.uuid4().hex} if is_xai_api(settings.base_url) else None
 
     for turns in range(1, limit + 1):
+        if cancel is not None and cancel.is_set():
+            status = "cancelled"
+            break
+        if progress:
+            progress(turns, "")
         if time.monotonic() > deadline:
             status = "time_limit" if time_limit else "timeout"
             break
@@ -391,14 +401,19 @@ def run_agent(
             break
 
         for call in calls:
+            if cancel is not None and cancel.is_set():
+                status = "cancelled"
+                break
             if progress:
                 progress(turns, call.function.name)
             output = call_tool(ctx, call.function.name, call.function.arguments)
             messages.append({"role": "tool", "tool_call_id": call.id, "content": output})
+        if status == "cancelled":
+            break
         if content:
             final = content  # keep the latest commentary in case the run stops early
 
-    if wrap_up and status != "completed":
+    if wrap_up and status not in ("completed", "cancelled"):
         prompt = REVIEW_WRAP_UP if mode == "review" else WRAP_UP
         final = _wrap_up(client, settings, messages, tool_schemas, status, usage, prompt) or final
 
@@ -430,15 +445,22 @@ def _wrap_up(client: Any, settings: Settings, messages: list[dict], tool_schemas
 
 def parallel_passes(task: str, settings: Settings, client_factory: Callable[[], Any], *,
                     mode: Mode, header: str, context: str = "", lenses: list[str] | None = None,
-                    effort: str | None = None, max_turns: int = 15) -> tuple[str, Usage, float | None]:
-    """Run one read-only pass per lens in parallel and merge the answers under a warning header."""
+                    effort: str | None = None, max_turns: int = 15,
+                    cancel: threading.Event | None = None,
+                    progress: Callable[[str], None] | None = None) -> tuple[str, Usage, float | None]:
+    """Run one read-only pass per lens in parallel and merge the answers under a warning header.
+    `progress` gets a short message, such as "edge cases: turn 2, read_file", as lenses work."""
     lenses = [lens.strip() for lens in (lenses or []) if lens and lens.strip()][:4] or [""]
 
     def one(lens: str) -> RunResult:
+        def step(turn: int, tool: str) -> None:
+            if progress:
+                progress(f"{lens or mode}: turn {turn}, {tool or 'thinking'}")
+
         return run_agent(task, settings, client_factory(), mode=mode, context=context,
                          effort=effort, lens=lens, max_turns=min(max_turns, settings.max_turns),
                          time_limit=settings.lens_timeout, output_limit=settings.lens_max_output,
-                         wrap_up=True)
+                         wrap_up=True, cancel=cancel, progress=step)
 
     with ThreadPoolExecutor(max_workers=len(lenses)) as pool:
         results = list(pool.map(one, lenses))
@@ -460,15 +482,18 @@ def parallel_passes(task: str, settings: Settings, client_factory: Callable[[], 
 
 def consult(question: str, settings: Settings, client_factory: Callable[[], Any], *,
             context: str = "", lenses: list[str] | None = None, effort: str | None = None,
-            max_turns: int = 15) -> tuple[str, Usage, float | None]:
+            max_turns: int = 15, cancel: threading.Event | None = None,
+            progress: Callable[[str], None] | None = None) -> tuple[str, Usage, float | None]:
     """Ask the deputy for ideas, optionally from several angles in parallel."""
     return parallel_passes(question, settings, client_factory, mode="consult", header=CONSULT_HEADER,
-                           context=context, lenses=lenses, effort=effort, max_turns=max_turns)
+                           context=context, lenses=lenses, effort=effort, max_turns=max_turns,
+                           cancel=cancel, progress=progress)
 
 
 def review(diff: str, settings: Settings, client_factory: Callable[[], Any], *, focus: str = "",
            lenses: list[str] | None = None, effort: str | None = None,
-           max_turns: int = 20) -> tuple[str, Usage, float | None]:
+           max_turns: int = 20, cancel: threading.Event | None = None,
+           progress: Callable[[str], None] | None = None) -> tuple[str, Usage, float | None]:
     """Have independent reviewers look for defects in a diff, one per lens, in parallel."""
     task = "Review this change for defects.\n"
     if focus.strip():
@@ -476,4 +501,4 @@ def review(diff: str, settings: Settings, client_factory: Callable[[], Any], *, 
     task += f"\nDIFF:\n{diff}"
     return parallel_passes(task, settings, client_factory, mode="review", header=REVIEW_HEADER,
                            lenses=lenses or DEFAULT_REVIEW_LENSES, effort=effort,
-                           max_turns=max_turns)
+                           max_turns=max_turns, cancel=cancel, progress=progress)
