@@ -1,7 +1,7 @@
 {
   "name": "deputy",
   "displayName": "Deputy",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Deputize cheap models. Claude stays the sheriff. A cheap model, DeepSeek V4.1 Flash, reviews Claude's code for bugs and gives second opinions, for under a cent each. Claude keeps writing the code; an optional savings mode delegates coding work.",
   "author": {
     "name": "Amirhossein Alimohammadi",

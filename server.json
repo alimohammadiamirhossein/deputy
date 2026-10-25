@@ -9,13 +9,13 @@
     "id": "1431818605"
   },
   "websiteUrl": "https://github.com/alimohammadiamirhossein/deputy",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "deputy-cc",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
