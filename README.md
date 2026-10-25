@@ -42,13 +42,16 @@ You need [uv](https://docs.astral.sh/uv/getting-started/installation/) and a
 | `investigate`: list a project's functions and their tests | 18 s | **$0.0004** |
 | `delegate`: fix a bug, add 3 tests, run pytest until green | 46 s | **$0.0006** |
 
-Measured on a small demo project with thinking `high`. On real projects, expect `consult` and
-`review` to stay under $0.01. Every result shows its real tokens and cost.
+Measured on a small demo project with thinking `high`. Reviews and second opinions now think at
+`low` by default, which makes them faster and cheaper (see the review benchmark below). On real
+projects, expect `consult` and `review` to stay under $0.01. Every result shows its real tokens
+and cost.
 
 ## Benchmark: Opus with and without Deputy
 
 Four small Python tasks with hidden tests Claude never sees ([bench/](https://github.com/alimohammadiamirhossein/deputy/tree/main/bench)),
-one run each on Claude Opus 5.5, October 2026:
+one run each on Claude Opus 5.5, October 2026. These runs predate the faster reviews: reviewers
+then thought at `high` with no time limit, and the prompt asked Claude to review every task.
 
 | Config | Hidden tests passed | Mean cost (Claude + Deputy) | Median time |
 |---|---|---|---|
@@ -62,7 +65,8 @@ What this shows, and what it doesn't:
   its own.
 - **Reviews cost Claude more than they cost Deputy.** Deputy's share is about a cent, but Claude
   spends more checking the findings, so a reviewed task cost 68% more and took longer. One review
-  took 24 minutes because a reviewer thought for 73k tokens.
+  took 24 minutes because a reviewer thought for 73k tokens. Reviewers now think at `low` and
+  stop after 180 s, and Claude reviews only risky or large changes.
 - **The findings still changed the code.** In 3 of 4 tasks Claude hardened the code beyond the
   spec: it fixed a rate limiter that a NaN timestamp would block forever, and added missing tests.
   It rejected one finding that contradicted the spec.
