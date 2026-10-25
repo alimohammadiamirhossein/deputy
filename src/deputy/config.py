@@ -15,6 +15,9 @@ from urllib.parse import urlsplit
 DEFAULT_BASE_URL = "https://api.deepinfra.com/v1/openai"
 DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4.1-Flash-1017"
 DEFAULT_EFFORT = "high"
+# review and consult lenses think less by default: in the review benchmark, low caught every
+# planted bug that high caught, with similar false alarms, in less than half the time.
+DEFAULT_LENS_EFFORT = "low"
 EFFORTS = ("none", "low", "medium", "high", "max")
 # accuracy: Claude writes all code; Deputy only gives second opinions and reviews.
 # lean: as few Claude tokens as possible with little accuracy loss (Deputy reads and takes
@@ -181,6 +184,7 @@ class Settings:
     # Per-lens caps for review and consult: a lens that runs into one writes up what it has.
     lens_timeout: int = 300
     lens_max_output: int = 32_000
+    lens_effort: str = DEFAULT_LENS_EFFORT
 
     @property
     def has_prices(self) -> bool:
@@ -200,7 +204,7 @@ class Settings:
             "provider": self.provider,
             "model": self.model,
             "endpoint": self.base_url,
-            "thinking": self.effort,
+            "thinking": f"{self.effort} (delegate, investigate), {self.lens_effort} (review, consult)",
             "api_key": f"set (from {self.key_source})" if self.api_key else "MISSING",
             "workspace": str(self.workspace),
             "max_turns": self.max_turns,
@@ -271,6 +275,10 @@ def load_settings(env: Mapping[str, str] | None = None, cwd: Path | None = None)
     effort = (_get(env, "DEPUTY_THINKING") or DEFAULT_EFFORT).lower()
     if effort not in EFFORTS:
         raise ConfigError(f"DEPUTY_THINKING must be one of {', '.join(EFFORTS)}, got {effort!r}")
+    lens_effort = (_get(env, "DEPUTY_LENS_THINKING") or DEFAULT_LENS_EFFORT).lower()
+    if lens_effort not in EFFORTS:
+        raise ConfigError(f"DEPUTY_LENS_THINKING must be one of {', '.join(EFFORTS)}, "
+                          f"got {lens_effort!r}")
     mode = read_mode(env)
     lead_name, lead_in, lead_cached, lead_out = _lead(env)
 
@@ -301,4 +309,5 @@ def load_settings(env: Mapping[str, str] | None = None, cwd: Path | None = None)
         provider=provider,
         lens_timeout=_int(env, "DEPUTY_LENS_TIMEOUT", 300, 30, 86_400),
         lens_max_output=_int(env, "DEPUTY_LENS_MAX_OUTPUT_TOKENS", 32_000, 1_000, 2_000_000),
+        lens_effort=lens_effort,
     )

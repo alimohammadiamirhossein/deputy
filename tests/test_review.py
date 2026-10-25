@@ -95,3 +95,24 @@ def test_review_tool_with_explicit_diff(project: Path, monkeypatch):
     monkeypatch.setattr(server, "make_client", lambda settings: FakeClient([reply("NO ISSUES FOUND")]))
     text = asyncio.run(server.review(diff="+print('hi')", lenses=["security"]))
     assert "REVIEW by" in text and "Lens: security" in text and "NO ISSUES FOUND" in text
+
+
+def test_review_and_consult_think_low_unless_asked(project: Path, monkeypatch):
+    monkeypatch.setenv("DEPUTY_API_KEY", "k")
+    monkeypatch.setenv("DEPUTY_WORKSPACE", str(project))
+    monkeypatch.setenv("DEPUTY_THINKING", "max")  # the worker's level; lenses have their own
+    sent = []
+
+    def client(settings):
+        fake = FakeClient([reply("VERDICT: approve")] * 4)
+        sent.append(fake)
+        return fake
+
+    monkeypatch.setattr(server, "make_client", client)
+    asyncio.run(server.review(diff="+x = 1", lenses=["bugs"]))
+    asyncio.run(server.consult("Use Redis?", lenses=["risks"]))
+    asyncio.run(server.review(diff="+x = 1", lenses=["bugs"], thinking="high"))
+    assert [f.requests[0]["reasoning_effort"] for f in sent] == ["low", "low", "high"]
+    monkeypatch.setenv("DEPUTY_LENS_THINKING", "medium")
+    asyncio.run(server.review(diff="+x = 1", lenses=["bugs"]))
+    assert sent[-1].requests[0]["reasoning_effort"] == "medium"

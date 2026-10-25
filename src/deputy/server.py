@@ -196,7 +196,7 @@ async def consult(question: str, context: str = "", lenses: list[str] | None = N
     try:
         text, usage, cost = await asyncio.to_thread(
             run_consult, question, settings, lambda: make_client(settings), context=context,
-            lenses=lenses, effort=thinking or settings.effort)
+            lenses=lenses, effort=thinking or settings.lens_effort)
     except (DeputyError, WorkspaceError) as exc:
         raise ToolError(f"Deputy failed: {exc}") from None
     if my_view.strip():
@@ -221,6 +221,8 @@ async def review(focus: str = "", diff: str = "", base: str = "", paths: list[st
     paths: limit the review to these files or folders.
     lenses: up to 4 review angles; default ["correctness and logic bugs",
       "edge cases, error handling and missing tests"].
+    thinking: leave it out for a fast review (low thinking by default); "high" or "max" think
+      longer, for an especially risky change.
     project_dir: absolute path of the project, only if Deputy picked the wrong folder.
 
     Findings are UNVERIFIED and may be false positives. Verify each against the code; fix only
@@ -231,7 +233,7 @@ async def review(focus: str = "", diff: str = "", base: str = "", paths: list[st
             collect_diff, Workspace(settings.workspace), base=base, paths=paths)
         result, usage, cost = await asyncio.to_thread(
             run_review, text, settings, lambda: make_client(settings), focus=focus,
-            lenses=lenses, effort=thinking or settings.effort)
+            lenses=lenses, effort=thinking or settings.lens_effort)
     except (DeputyError, DiffError, WorkspaceError) as exc:
         raise ToolError(f"Deputy review failed: {exc}") from None
     return _finish("review", result, usage, cost, settings)

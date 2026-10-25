@@ -64,6 +64,10 @@ def test_lens_caps_have_defaults_and_bounds(project: Path):
     assert (settings.lens_timeout, settings.lens_max_output) == (60, 5_000)
     with pytest.raises(ConfigError):
         capped(project, DEPUTY_LENS_TIMEOUT="5")
+    assert capped(project).lens_effort == "low"
+    assert capped(project, DEPUTY_LENS_THINKING="HIGH").lens_effort == "high"
+    with pytest.raises(ConfigError, match="DEPUTY_LENS_THINKING"):
+        capped(project, DEPUTY_LENS_THINKING="extreme")
 
 
 def test_output_budget_shrinks_each_request_then_wraps_up(project: Path):

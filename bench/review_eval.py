@@ -207,7 +207,7 @@ def run_case(case: Path, spec: dict, variant: str, rep: int, args: argparse.Name
                                      ignore_cleanup_errors=True) as tmp:
         workdir = build(case, variant, Path(tmp))
         settings = load_settings({**os.environ, "DEPUTY_WORKSPACE": str(workdir)})
-        row.update(model=settings.model, thinking=args.thinking or settings.effort)
+        row.update(model=settings.model, thinking=args.thinking or settings.lens_effort)
         started = time.monotonic()
         try:
             text, _, cost = review(collect_diff(Workspace(workdir)), settings,
@@ -347,7 +347,7 @@ def main() -> int:
     parser.add_argument("--lenses", nargs="*",
                         help=f"review lenses (default: Deputy's {DEFAULT_REVIEW_LENSES})")
     parser.add_argument("--thinking", choices=EFFORTS,
-                        help="default: DEPUTY_THINKING, else high")
+                        help="default: DEPUTY_LENS_THINKING, else low")
     parser.add_argument("--check", action="store_true",
                         help="only check that the cases are sound; no API calls")
     args = parser.parse_args()
