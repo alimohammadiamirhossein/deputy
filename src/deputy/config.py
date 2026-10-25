@@ -182,7 +182,7 @@ class Settings:
     data_dir: Path = field(default_factory=lambda: Path.home() / ".deputy")
     provider: str = DEFAULT_PROVIDER
     # Per-lens caps for review and consult: a lens that runs into one writes up what it has.
-    lens_timeout: int = 300
+    lens_timeout: int = 180
     lens_max_output: int = 32_000
     lens_effort: str = DEFAULT_LENS_EFFORT
 
@@ -307,7 +307,7 @@ def load_settings(env: Mapping[str, str] | None = None, cwd: Path | None = None)
         stats_enabled=_bool(env, "DEPUTY_STATS", True),
         data_dir=_data_dir(env),
         provider=provider,
-        lens_timeout=_int(env, "DEPUTY_LENS_TIMEOUT", 300, 30, 86_400),
+        lens_timeout=_int(env, "DEPUTY_LENS_TIMEOUT", 180, 30, 86_400),
         lens_max_output=_int(env, "DEPUTY_LENS_MAX_OUTPUT_TOKENS", 32_000, 1_000, 2_000_000),
         lens_effort=lens_effort,
     )

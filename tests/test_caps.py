@@ -58,8 +58,8 @@ class SlowClient(FakeClient):
 
 def test_lens_caps_have_defaults_and_bounds(project: Path):
     settings = capped(project)
-    assert (settings.lens_timeout, settings.lens_max_output) == (300, 32_000)
-    assert settings.describe()["per_lens_limit"] == "300s or 32,000 output tokens"
+    assert (settings.lens_timeout, settings.lens_max_output) == (180, 32_000)
+    assert settings.describe()["per_lens_limit"] == "180s or 32,000 output tokens"
     settings = capped(project, DEPUTY_LENS_TIMEOUT="60", DEPUTY_LENS_MAX_OUTPUT_TOKENS="5000")
     assert (settings.lens_timeout, settings.lens_max_output) == (60, 5_000)
     with pytest.raises(ConfigError):
@@ -176,4 +176,4 @@ def test_review_lens_that_hits_a_cap_is_labelled(project: Path):
     assert "[output_limit |" in text
     assert "NOTE: this lens stopped at its thinking budget" in text
     assert "NOT CHECKED: tests" in text and usage.requests == 2
-    assert clients[0].requests[0]["timeout"] == pytest.approx(300, abs=1)
+    assert clients[0].requests[0]["timeout"] == pytest.approx(180, abs=1)
