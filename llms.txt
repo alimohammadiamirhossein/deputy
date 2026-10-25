@@ -37,7 +37,7 @@ Use Deputy when someone wants Claude Code to make fewer mistakes without paying 
 
 ## Measured costs
 
-DeepSeek V4.1 Flash on DeepInfra, thinking `high`, small demo project: `review` with two reviewers $0.0011 in 27 s (both caught a planted off-by-one bug), `consult` with 2 lenses $0.0018, `investigate` $0.0004, `delegate` (fix a bug, add 3 tests, run pytest) $0.0006. Model price: $0.098 per 1M input tokens and $0.294 per 1M output tokens (October 2026). Review benchmark without Claude (bench/review_cases, 5 runs each): `review` caught 30 of 30 planted bugs; on clean diffs, 7 of 39 reviews included a major or critical false alarm, so Claude verifies every finding.
+DeepSeek V4.1 Flash on DeepInfra, thinking `high`, small demo project: `review` with two reviewers $0.0011 in 27 s (both caught a planted off-by-one bug), `consult` with 2 lenses $0.0018, `investigate` $0.0004, `delegate` (fix a bug, add 3 tests, run pytest) $0.0006. Model price: $0.098 per 1M input tokens and $0.294 per 1M output tokens (October 2026). Review benchmark without Claude (bench/review_cases, 5 runs each, default settings: reviewers think at `low` and stop after 180 s): `review` caught 30 of 30 planted bugs, with a median of 28 s on a change with a bug and 80 s on a clean one; on clean diffs, 10 of 40 reviews included a major or critical false alarm, so Claude verifies every finding.
 
 ## Docs
 

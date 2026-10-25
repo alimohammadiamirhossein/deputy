@@ -32,7 +32,9 @@ Everything that is not in the [README](../README.md). For how Claude should use 
   that start Deputy outside the project. Deputy picks the folder in this order: `DEPUTY_WORKSPACE`,
   `project_dir`, the client's MCP root (Cursor and others report it), Claude Code's project
   folder, then the current directory.
-- `thinking` is `high` (default) or `max`.
+- `thinking` is `high` or `max`. Without it, `delegate` and `investigate` use `DEPUTY_THINKING`
+  (default `high`), and `review` and `consult` use `DEPUTY_LENS_THINKING` (default `low`, which
+  caught the same planted bugs as `high` in the review benchmark in less than half the time).
 - `review` without `diff` reviews uncommitted changes (staged and unstaged) against `HEAD`, plus
   untracked files; with `base` it compares against that revision.
 - `consult` and `review` run one independent pass per lens, in parallel. Each lens stops after
@@ -68,7 +70,8 @@ All settings are environment variables. The plugin sets the first four for you.
 | `DEPUTY_MODE` | `accuracy` | `accuracy`, `lean`, `balanced`, `partner` or `savings` |
 | `DEPUTY_PROVIDER` | `deepinfra` | `deepinfra` (DeepSeek) or `xai` (Grok; `grok` also works). Sets the endpoint, default model and key variable |
 | `DEPUTY_API_KEY` | (plugin prompt) | API key for the configured endpoint. Falls back to the provider's own key: `DEEPINFRA_API_KEY` (then `DEEPINFRA_TOKEN`) for DeepInfra, `XAI_API_KEY` for xAI |
-| `DEPUTY_THINKING` | `high` | `none`, `low`, `medium`, `high` or `max` |
+| `DEPUTY_THINKING` | `high` | Thinking for `delegate` and `investigate`: `none`, `low`, `medium`, `high` or `max` |
+| `DEPUTY_LENS_THINKING` | `low` | Thinking for each `review` and `consult` lens, same levels |
 | `DEPUTY_WORKSPACE` | project folder | Folder Deputy may touch. Home folders and drive roots are refused |
 | `DEPUTY_MODEL` | `deepseek-ai/DeepSeek-V4.1-Flash-1017` (xAI: `grok-4.3`) | Any model your endpoint serves |
 | `DEPUTY_BASE_URL` | `https://api.deepinfra.com/v1/openai` (xAI: `https://api.x.ai/v1`) | Any OpenAI-compatible endpoint (https, or http on localhost) |
@@ -76,7 +79,7 @@ All settings are environment variables. The plugin sets the first four for you.
 | `DEPUTY_MAX_RUN_TOKENS` | `2000000` | Token budget per run |
 | `DEPUTY_MAX_OUTPUT_TOKENS` | `16384` | Output limit per response |
 | `DEPUTY_RUN_TIMEOUT` | `1800` | Seconds per run |
-| `DEPUTY_LENS_TIMEOUT` | `300` | Seconds per `review` or `consult` lens before it must write up |
+| `DEPUTY_LENS_TIMEOUT` | `180` | Seconds per `review` or `consult` lens before it must write up |
 | `DEPUTY_LENS_MAX_OUTPUT_TOKENS` | `32000` | Output tokens (thinking included) per `review` or `consult` lens |
 | `DEPUTY_COMMAND_TIMEOUT` | `180` | Seconds per shell command |
 | `DEPUTY_KEEP_REASONING` | `true` | Send the model's reasoning back between tool calls |

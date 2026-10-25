@@ -60,12 +60,22 @@ Results go to `bench/results/review-<timestamp>/`.
 
 ## Results
 
-Two runs so far, both with DeepSeek V4.1 Flash, thinking `high` and 5 repeats (October 2026):
+All runs use DeepSeek V4.1 Flash and 5 repeats (October 2026). The first two think at `high` with
+no cap; the rest compare thinking levels and per-lens time caps:
 
-| Run | Planted bugs caught | Clean reviews with a major or critical finding | Findings on clean diffs |
-|---|---|---|---|
-| [First run](../results/2026-10-24-review/results.md) | 30/30 | 11/39 | 72 (17 major) |
-| [After the new-file fix](../results/2026-10-24-review-after-fix/results.md) | 30/30 | 7/39 | 61 (11 major) |
+| Run | Bugs caught | Clean reviews with a major finding | Findings on clean diffs (major) | Median clean review | Slowest clean review |
+|---|---|---|---|---|---|
+| [First run](../results/2026-10-24-review/results.md) | 30/30 | 11/39 | 72 (17) | 164 s | 924 s |
+| [After the new-file fix](../results/2026-10-24-review-after-fix/results.md) | 30/30 | 7/39 | 61 (11) | 156 s | 1,406 s |
+| [Thinking `low`](../results/2026-10-24-review-thinking-low/results.md) | 30/30 | 9/40 | 51 (12) | 71 s | 417 s |
+| [Thinking `medium`](../results/2026-10-24-review-thinking-medium/results.md) | 26/26 | 6/30 | 48 (10) | 88 s | 414 s |
+| [`low` + 120 s cap](../results/2026-10-24-review-low-cap120/results.md) | 30/30 | 9/40 | 54 (12) | 85 s | 209 s |
+| [**`low` + 180 s cap (default)**](../results/2026-10-24-review-low-cap180/results.md) | 30/30 | 10/40 | 50 (14) | 80 s | 230 s |
+
+The `medium` run lost 14 reviews to connection errors while three benchmarks ran at once. With
+the 120 s cap, 19 of 80 clean-diff lenses were cut off; with 180 s, 9. A cut-off lens still
+spends up to about 90 s writing up what it checked, so both caps end near the same slowest time,
+and 180 s interrupts fewer reviews.
 
 The first run showed that Deputy labelled new files "(untracked)" in the diff, and in `retry`
 some reviewers read that as "`retry.py` will not be committed" (6 findings, 3 of them major).

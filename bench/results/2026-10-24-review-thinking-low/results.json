@@ -1,0 +1,3826 @@
+[
+  {
+    "case": "config_merge",
+    "variant": "bug",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0017232308,
+    "seconds": 28.6,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "settings.py",
+            "lines": [
+              13,
+              16
+            ],
+            "confidence": "high",
+            "what": "merge mutates DEFAULTS in place, so the very first load() with a nested override permanently changes the defaults for every later load() in the process.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_settings.py",
+            "lines": [
+              4,
+              12
+            ],
+            "confidence": "high",
+            "what": "The rewritten tests never assert that DEFAULTS is unchanged or that a later load() is unaffected, which is exactly the property the change is meant to guarantee, so the critical defect above passes the suite.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "settings.py",
+            "lines": [
+              13,
+              16
+            ],
+            "confidence": "high",
+            "what": "merge mutates the nested dicts it is given, so every load() that overrides a nested key permanently rewrites the module-level DEFAULTS \u2014 violating the stated invariant that DEFAULTS must never change.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "config_merge",
+    "variant": "bug",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0019224324,
+    "seconds": 22.4,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "settings.py",
+            "lines": [
+              13,
+              16
+            ],
+            "confidence": "high",
+            "what": "merge shallow-copies base (result = dict(base)), so result[key] is the *same* nested dict object as base[key]; the in-place result[key].update(...) therefore mutates DEFAULTS \u2014 the exact invariant the change must preserve.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_settings.py",
+            "lines": [
+              4,
+              12
+            ],
+            "confidence": "high",
+            "what": "No test asserts that DEFAULTS is unchanged after load(), which is precisely why the corruption above ships green.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "settings.py",
+            "lines": [
+              13,
+              16
+            ],
+            "confidence": "high",
+            "what": "merge() only shallow-copies, so the recursive result[key].update(...) writes straight into DEFAULTS, permanently mutating the module-level defaults that the task says must never change.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "settings.py",
+            "lines": [
+              18
+            ],
+            "confidence": "medium",
+            "what": "When the override value is a dict but the base key is absent or not a dict, result[key] = value stores the caller's dict by reference, so the returned settings and the caller's overrides object alias each other.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_settings.py",
+            "lines": [
+              4,
+              12
+            ],
+            "confidence": "high",
+            "what": "The tests cannot detect the DEFAULTS-corruption bug, because they never assert that DEFAULTS (or a second load() result) is unchanged after load(), and the one test that would have caught it (db.port preserved after a non-dict/partial override) was deleted.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 5,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 2,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "config_merge",
+    "variant": "bug",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0018744243999999999,
+    "seconds": 26.5,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "settings.py",
+            "lines": [
+              13,
+              16
+            ],
+            "confidence": "high",
+            "what": "merge mutates DEFAULTS in place, because dict(base) is a shallow copy and line 16 calls .update() on a nested dict that is still the same object as base[key].",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "settings.py",
+            "lines": [
+              13
+            ],
+            "confidence": "medium",
+            "what": "Sections that are not overridden are still returned by reference (result[\"cache\"] is DEFAULTS[\"cache\"]), so a caller mutating load({})[\"cache\"][\"ttl\"] corrupts DEFAULTS for all later deployments.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "settings.py",
+            "lines": [
+              16
+            ],
+            "confidence": "high",
+            "what": "result[key].update(...) mutates the caller's dict in place, so load() permanently rewrites the module-level DEFAULTS (and the docstring's claim \"Neither argument is modified\" is false).",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_settings.py",
+            "lines": [
+              4,
+              12
+            ],
+            "confidence": "high",
+            "what": "The tests only exercise a single load() call, so neither the \"DEFAULTS never change\" invariant nor independence between two deployments is covered.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 4,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "config_merge",
+    "variant": "bug",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0017621164000000001,
+    "seconds": 29.1,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "settings.py",
+            "lines": [
+              13,
+              16
+            ],
+            "confidence": "high",
+            "what": "result = dict(base) is a shallow copy, so result[key] is the *same object* as base[key]; the recursive call's result[key].update(...) therefore mutates DEFAULTS in place, permanently corrupting the defaults for every later load() call in the process.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "settings.py",
+            "lines": [
+              13,
+              16
+            ],
+            "confidence": "high",
+            "what": "merge mutates DEFAULTS in place instead of returning a fresh copy, so the very first load() permanently rewrites the shared defaults.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_settings.py",
+            "lines": [
+              4,
+              12
+            ],
+            "confidence": "high",
+            "what": "The new tests cover only the happy path and never assert the two properties the change explicitly promises \u2014 that DEFAULTS is unchanged and that two successive load() calls are independent \u2014 so the critical bug above ships green.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "config_merge",
+    "variant": "bug",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0020977336,
+    "seconds": 50.6,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "settings.py",
+            "lines": [
+              13,
+              16
+            ],
+            "confidence": "high",
+            "what": "merge mutates base's nested dicts in place, so load() writes deployment overrides into the module-level DEFAULTS (and into any caller-supplied nested dict), directly violating \"DEFAULTS must never change.\"",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_settings.py",
+            "lines": [
+              4,
+              12
+            ],
+            "confidence": "high",
+            "what": "The tests only assert the returned value, so they cannot detect mutation of DEFAULTS, which is the requirement most at risk in this change.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "settings.py",
+            "lines": [
+              13,
+              16
+            ],
+            "confidence": "high",
+            "what": "merge mutates DEFAULTS in place, so load() permanently corrupts the module-level defaults instead of leaving them untouched.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "settings.py",
+            "lines": [
+              18
+            ],
+            "confidence": "medium",
+            "what": "When a key exists only in the overrides (or the base value is not a dict), the caller's dict object is stored by reference in the returned settings, so load()'s result is not isolated from the caller.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 4,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "config_merge",
+    "variant": "clean",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0030226188,
+    "seconds": 67.8,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "settings.py",
+            "lines": [
+              19
+            ],
+            "confidence": "medium",
+            "what": "load() now deep-copies every override value, so an override carrying a non-deep-copyable object (lock, open file, socket, generator, many C-backed handles) raises TypeError where the old settings.update(overrides) accepted it, and the returned value is no longer the same object the caller passed in.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 1,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 1,
+    "agreed": false
+  },
+  {
+    "case": "config_merge",
+    "variant": "clean",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0031180263999999996,
+    "seconds": 54.4,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "settings.py",
+            "lines": [
+              19
+            ],
+            "confidence": "medium",
+            "what": "Override values are now copy.deepcopy-ed instead of inserted as-is, so load() raises TypeError for any non-deepcopyable override value and no longer preserves object identity for the ones it can copy.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "settings.py",
+            "lines": [
+              17
+            ],
+            "confidence": "low",
+            "what": "When the base value and the override value are both dicts, merge returns a plain dict built from the base, so a dict-subclass override (e.g. defaultdict, OrderedDict ordering metadata, an attrs/__slots__-carrying subclass) loses its type and extra attributes.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 2,
+    "agreed": false
+  },
+  {
+    "case": "config_merge",
+    "variant": "clean",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0031199832000000003,
+    "seconds": 71.7,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "settings.py",
+            "lines": [
+              19
+            ],
+            "confidence": "medium",
+            "what": "Every non-dict override value is now copy.deepcopy'd, so overrides no longer carry the caller's object through unchanged and values that cannot be deep-copied (locks, loggers, sockets/connections, open files, generators, types.MappingProxyType, etc.) make load() raise instead of merely being stored.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 1,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "agreed": false
+  },
+  {
+    "case": "config_merge",
+    "variant": "clean",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0031290824,
+    "seconds": 58.9,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "settings.py",
+            "lines": [
+              14,
+              19
+            ],
+            "confidence": "medium",
+            "what": "Overrides are no longer used as-is; they are copy.deepcopyd, so any override value that cannot be deep-copied (or whose identity matters) now fails or is silently cloned at load() time.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "test_settings.py",
+            "lines": [
+              4,
+              20
+            ],
+            "confidence": "high",
+            "what": "The untested paths are exactly the ones the change newly defines: adding a section that does not exist in DEFAULTS (the result.get(key) is None half of line 16), and a non-dict override sitting where the default is a dict (e.g. {\"db\": \"sqlite:///\"}).",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 2,
+    "agreed": false
+  },
+  {
+    "case": "config_merge",
+    "variant": "clean",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0036526488,
+    "seconds": 70.9,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "settings.py",
+            "lines": [
+              18,
+              19
+            ],
+            "confidence": "medium (the typeerror and identity loss follow directly from copy.deepcopy semantics; i could not run the repro here, and the repo has no existing caller that exercises non-primitive overrides)",
+            "what": "Override values are now copy.deepcopy-ed, so load() no longer tolerates non-copyable override values and no longer preserves the identity of objects passed in \u2014 both worked with the old settings.update(overrides) shallow copy.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "settings.py",
+            "lines": [
+              19
+            ],
+            "confidence": "medium",
+            "what": "Every non-dict override value is now copy.deepcopy-ed, so load() raises TypeError for any non-copyable object in the overrides and silently hands back a *copy* (not the same object) for everything else \u2014 both are behavior changes versus the old settings.update(overrides), which shared the caller's objects by reference.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "test_settings.py",
+            "lines": [
+              15,
+              20
+            ],
+            "confidence": "medium",
+            "what": "The \"defaults are never changed\" test only guards one leaf (cache.ttl) and never checks the new failure mode above, nor that merge results don't alias the caller's override dict.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 3,
+    "agreed": true
+  },
+  {
+    "case": "format_bytes",
+    "variant": "bug",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0024568944,
+    "seconds": 36.9,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "units.py",
+            "lines": [
+              16
+            ],
+            "confidence": "high",
+            "what": "The byte-only branch is if n <= 1024, so exactly 1024 bytes is rendered as \"1024 B\" instead of \"1.0 KiB\", contradicting the function's own docstring and the unit convention used at every other boundary.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "units.py",
+            "lines": [
+              16,
+              17
+            ],
+            "confidence": "high",
+            "what": "The n <= 1024 cutoff makes format_bytes(1024) return \"1024 B\", contradicting the function's own docstring (1024 -> '1.0 KiB') and the intended binary-unit behavior.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 0,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "format_bytes",
+    "variant": "bug",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0030948979999999996,
+    "seconds": 43.8,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "units.py",
+            "lines": [
+              16
+            ],
+            "confidence": "high",
+            "what": "The byte branch is inclusive (n <= 1024), so exactly 1024 bytes renders as \"1024 B\", contradicting the docstring contract 1024 -> '1.0 KiB'.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "units.py",
+            "lines": [
+              16,
+              1024
+            ],
+            "confidence": "high",
+            "what": "An input of exactly 1024 returns \"1024 B\" instead of the documented \"1.0 KiB\", so the boundary value is off by one.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_units.py",
+            "lines": [
+              10,
+              12
+            ],
+            "confidence": "high",
+            "what": "The test cases straddle the unit-transition boundary (512, 1536) but never test 1023/1024/1025, so the off-by-one above is invisible to the suite.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "format_bytes",
+    "variant": "bug",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0021448624,
+    "seconds": 27.3,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "units.py",
+            "lines": [
+              16,
+              17
+            ],
+            "confidence": "high",
+            "what": "format_bytes(1024) returns \"1024 B\", but the docstring in the same change states 1024 -> '1.0 KiB'; the byte branch uses n <= 1024 instead of n < 1024.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "units.py",
+            "lines": [
+              16
+            ],
+            "confidence": "high",
+            "what": "n == 1024 is handled by the byte branch and returns \"1024 B\", but the docstring (and the stated spec) require \"1.0 KiB\"; the test suite has no case at that boundary so it passes.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 0,
+    "caught": true,
+    "caught_serious": false,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "format_bytes",
+    "variant": "bug",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.002107952,
+    "seconds": 34.7,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "units.py",
+            "lines": [
+              16
+            ],
+            "confidence": "high",
+            "what": "The bytes branch uses n <= 1024, so exactly 1024 bytes renders as \"1024 B\" instead of \"1.0 KiB\", contradicting the function's own docstring and the stated spec.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "units.py",
+            "lines": [
+              16
+            ],
+            "confidence": "high",
+            "what": "The byte branch uses n <= 1024, so exactly 1024 bytes renders as \"1024 B\" even though the docstring in the same function promises 1024 -> '1.0 KiB' (and the task spec says binary units with one decimal per the docstring).",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 0,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "format_bytes",
+    "variant": "bug",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0021419288000000002,
+    "seconds": 30.8,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "units.py",
+            "lines": [
+              16
+            ],
+            "confidence": "high",
+            "what": "format_bytes(1024) returns \"1024 B\", but the function's own docstring (units.py:12) specifies 1024 -> '1.0 KiB', so the byte/KiB boundary is off by one.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "units.py",
+            "lines": [
+              16
+            ],
+            "confidence": "high",
+            "what": "The byte branch uses n <= 1024, so exactly 1024 bytes is reported as \"1024 B\" instead of the \"1.0 KiB\" the docstring (units.py:12-13) and the binary-unit contract require \u2014 an off-by-one at the unit boundary.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 0,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "format_bytes",
+    "variant": "clean",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0169035076,
+    "seconds": 418.2,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "format_bytes",
+    "variant": "clean",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.009220267999999998,
+    "seconds": 180.4,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "units.py",
+            "lines": [
+              18
+            ],
+            "confidence": "high that the behaviour occurs; low that it matters in practice",
+            "what": "size = n / 1024 raises OverflowError for large-but-valid int inputs (n > ~1.8e308), so the documented contract \"n is a byte count (an int >= 0), negative sizes raise ValueError\" breaks with an unexpected exception type instead of a clean result/error.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 1,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 1,
+    "agreed": false
+  },
+  {
+    "case": "format_bytes",
+    "variant": "clean",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0118784592,
+    "seconds": 317.6,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "units.py",
+            "lines": [
+              18
+            ],
+            "confidence": "high (cpython behavior), medium that it matters in practice",
+            "what": "size = n / 1024 raises OverflowError for any valid int >= 0 larger than roughly 1.8e311, so format_bytes crashes instead of returning the documented \"stay in PiB\" result.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 1,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 1,
+    "agreed": false
+  },
+  {
+    "case": "format_bytes",
+    "variant": "clean",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.006835981999999999,
+    "seconds": 155.7,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "units.py",
+            "lines": [
+              14,
+              18
+            ],
+            "confidence": "medium",
+            "what": "The only input guard is if n < 0; anything that is not an int (float, bool, NaN, \u00b1inf) is silently formatted, producing values that are not valid byte counts \u2014 e.g. format_bytes(float('nan')) == \"nan PiB\", format_bytes(float('inf')) == \"inf PiB\", format_bytes(0.5) == \"0.5 B\", format_bytes(-0.0) == \"-0.0 B\", while a string/dict raises TypeError instead of the documented ValueError.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 1,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 1,
+    "agreed": false
+  },
+  {
+    "case": "format_bytes",
+    "variant": "clean",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.009136594399999998,
+    "seconds": 147.6,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "memoize",
+    "variant": "bug",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.00145649,
+    "seconds": 21.1,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "The cache key is built from positional args only, so any call that passes qty or currency as a keyword collides with the same-SKU call made with positional/default args and silently returns the wrong price.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "The cache key is built from args only, so every call that passes qty and/or currency as keyword arguments collides with the positional-only call for the same first argument and gets the wrong cached price.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 0,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "memoize",
+    "variant": "bug",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0016996248,
+    "seconds": 25.7,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "The cache key is built from positional args only (key = args), so every call that passes its arguments as keywords hits the same entry and returns another call's price.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high (that kwargs are dropped); medium (that current in-repo callers use kwargs \u2014 none do, but the signature and docstring invite it).",
+            "what": "key = args ignores kwargs entirely, so every call that passes its arguments by keyword collides on the same cache key and returns the first computed value.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "cache.py",
+            "lines": [
+              8
+            ],
+            "confidence": "low (depends on callers outside this diff).",
+            "what": "The unbounded cache is keyed on every argument, not on the small fixed SKU set, so the key space is unbounded in qty (and any future arg), and every distinct value is retained forever.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "test_pricing.py",
+            "lines": [
+              16
+            ],
+            "confidence": "high.",
+            "what": "test_cache_clear does not test that the cache was cleared; it asserts a value that is identical whether or not cache_clear() does anything, so it passes with a no-op cache_clear.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 4,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 2,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "memoize",
+    "variant": "bug",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.00197722,
+    "seconds": 26.3,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "The cache key is only args, so keyword arguments are dropped: quote(\"melon\", qty=3) is stored under key (\"melon\",) and then returned for the entirely different call quote(\"melon\").",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_pricing.py",
+            "lines": [
+              17,
+              19
+            ],
+            "confidence": "high",
+            "what": "test_cache_clear passes even if cache_clear is a no-op, so it does not verify the behavior it names, and no test covers the keyword-argument collision above.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "The cache key is built from args only, so keyword arguments are ignored; quote(sku) and quote(sku, qty=...)/quote(sku, currency=...) map to the same key and the second call silently returns the first call's price.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_pricing.py",
+            "lines": [
+              10
+            ],
+            "confidence": "high",
+            "what": "The new tests give false confidence: test_cached_results_depend_on_the_arguments only calls with positional args (the one form the buggy key handles correctly) and never proves a cache hit occurred, and test_cache_clear passes whether or not anything was cached or cleared.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 4,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 2,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "memoize",
+    "variant": "bug",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0015008452,
+    "seconds": 20.2,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "The cache key is built from args only, so every call that passes qty or currency as a keyword argument collides with the plain quote(sku) entry and returns a wrong price.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "The cache key is only the positional args tuple, so kwargs are silently dropped \u2014 every call that passes arguments by keyword shares the key (), and calls that mix positionals with keywords collide with calls that omit the defaulted parameter.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_pricing.py",
+            "lines": [
+              10
+            ],
+            "confidence": "high",
+            "what": "The new tests never exercise keyword arguments, so the exact bug above ships green; test_cache_clear is also vacuous because it would pass even if cache_clear were a no-op.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "memoize",
+    "variant": "bug",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0014763452,
+    "seconds": 41.6,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "",
+            "what": "The cache key is args only, so keyword arguments are completely ignored \u2014 two calls with the same positional prefix but different keyword values collide and the second call silently returns the first call's result.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "The cache key is only args, so every keyword argument is silently dropped from the identity of a call \u2014 quote(\"pear\", qty=4, currency=\"EUR\") returns whatever was cached for quote(\"pear\").",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "cache.py",
+            "lines": [
+              8
+            ],
+            "confidence": "medium",
+            "what": "The cache is unbounded in a dimension the lead agent did not account for: keys include qty, so the entry count is SKUs \u00d7 distinct quantities \u00d7 currencies, not \"a small set of SKUs\".",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "memoize",
+    "variant": "clean",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0047225352,
+    "seconds": 86.6,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "medium",
+            "what": "The cache is keyed on the raw call shape rather than the logical arguments, so the key space is SKUs \u00d7 every distinct qty \u00d7 every currency \u00d7 call style and grows without bound \u2014 the justification \"the set of SKUs is small\" does not hold.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "test_pricing.py",
+            "lines": [
+              17,
+              20,
+              10,
+              14
+            ],
+            "confidence": "high",
+            "what": "No test asserts that caching actually happens, so the suite passes unchanged if memoize is a no-op or if cache_clear never clears anything.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "The cache key is the raw call spelling ((args, tuple(sorted(kwargs.items())))) rather than the bound arguments, so calls that mean exactly the same thing (quote(\"melon\", 2), quote(\"melon\", qty=2), quote(\"melon\", 2, \"USD\"), quote(\"melon\", 2, currency=\"USD\")) create four separate entries and never share work.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "test_pricing.py",
+            "lines": [
+              10,
+              20
+            ],
+            "confidence": "high",
+            "what": "No test ever observes a cache *hit*; a memoize that stores nothing at all, or one that stores stale values forever, passes the entire new test suite.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 4,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 4,
+    "agreed": true
+  },
+  {
+    "case": "memoize",
+    "variant": "clean",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0041986724,
+    "seconds": 84.8,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "pricing.py",
+            "lines": [
+              8
+            ],
+            "confidence": "medium",
+            "what": "The cache size is unbounded in the number of distinct qty and currency values, not just SKUs, so repeated checkouts with new quantities grow it indefinitely.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "Equivalent calls that differ only in positional-vs-keyword form get separate cache entries and always miss each other.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "cache.py",
+            "lines": [
+              8,
+              12
+            ],
+            "confidence": "medium",
+            "what": "the cache is keyed on *all* arguments, so qty \u2014 a number that varies per cart and is effectively unbounded \u2014 becomes part of the key, giving a permanent dict entry per distinct quantity rather than per SKU.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "pricing.py",
+            "lines": [
+              8,
+              11
+            ],
+            "confidence": "medium",
+            "what": "the cached result depends on module globals (PRICES, CURRENCY_RATES) that are not in the key, so any later change to a price or rate keeps returning the old quote until someone manually calls quote.cache_clear().",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "test_pricing.py",
+            "lines": [
+              10,
+              20
+            ],
+            "confidence": "high",
+            "what": "neither new test would fail if @memoize were removed entirely, so the change's actual behaviour (serving a stored result, and serving a *fresh* one after a data change) is untested.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 5,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 5,
+    "agreed": true
+  },
+  {
+    "case": "memoize",
+    "variant": "clean",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0037847108,
+    "seconds": 74.9,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "cache.py",
+            "lines": [
+              12,
+              15
+            ],
+            "confidence": "medium",
+            "what": "The cache is keyed on the full argument tuple, and one of those arguments is qty \u2014 caller-supplied user input \u2014 so the cache is not bounded by \"the set of SKUs is small\"; it is bounded only by the number of distinct (sku, qty, currency) triples anyone ever asks for, and entries are never removed.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "cache.py",
+            "lines": [
+              8,
+              15
+            ],
+            "confidence": "high (mechanism), medium (whether qty is user-controlled \u2014 no call sites exist in this workspace to confirm)",
+            "what": "The cache is keyed on the full argument tuple, so its cardinality is bounded by the number of distinct (sku, qty, currency) combinations, not by the number of SKUs \u2014 qty is an unbounded integer, and nothing ever evicts entries.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "Calls that are logically identical but use different argument spellings get different cache keys, so the memoization does not deduplicate the repeated calls it was introduced for.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 3,
+    "agreed": true
+  },
+  {
+    "case": "memoize",
+    "variant": "clean",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.003694082,
+    "seconds": 69.6,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "cache.py",
+            "lines": [
+              12,
+              15
+            ],
+            "confidence": "medium",
+            "what": "The cache is keyed on the raw call arguments, which include the caller-supplied qty, so the number of live entries is not \"the small set of SKUs\" \u2014 it is skus \u00d7 every distinct quantity \u00d7 every distinct currency, and the entry is kept forever.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "test_pricing.py",
+            "lines": [
+              10,
+              14
+            ],
+            "confidence": "high",
+            "what": "The new tests only assert correct return values, so they pass even if memoization never hits (or if cache were rebuilt per call); nothing verifies that a repeated call actually returns the cached result or that the key includes each argument.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "cache.py",
+            "lines": [
+              13,
+              14
+            ],
+            "confidence": "medium",
+            "what": "The cache is bounded by the number of distinct qty values, not by the SKU set, so the \"small fixed key space\" justification for an eviction-free cache does not hold; every distinct quantity permanently adds an entry.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "test_pricing.py",
+            "lines": [
+              10,
+              20
+            ],
+            "confidence": "high",
+            "what": "None of the new tests would fail if memoize were replaced by a no-op decorator, so the behavior the change exists to add (results are actually reused) is untested.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "pricing.py",
+            "lines": [
+              4,
+              5
+            ],
+            "confidence": "low",
+            "what": "The \"constants never change\" premise is asserted, not enforced: PRICES and CURRENCY_RATES are ordinary public mutable dicts, and any runtime update (price change, rate refresh, test monkeypatching) silently yields stale quotes forever.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 5,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 5,
+    "agreed": true
+  },
+  {
+    "case": "memoize",
+    "variant": "clean",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0053032916,
+    "seconds": 140.2,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "cache.py",
+            "lines": [
+              8
+            ],
+            "confidence": "medium",
+            "what": "The cache is unbounded and its key includes qty, which is caller-supplied and has no fixed domain, so a long-lived process accumulates one entry per distinct (sku, qty, currency) ever requested.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "pricing.py",
+            "lines": [
+              4,
+              5
+            ],
+            "confidence": "medium",
+            "what": "PRICES and CURRENCY_RATES are plain mutable module globals, and memoizing quote permanently freezes the first computed total, so any later mutation is silently ignored.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "test_pricing.py",
+            "lines": [
+              17,
+              20
+            ],
+            "confidence": "high",
+            "what": "Neither new test would fail if the cache never hit or cache_clear were a no-op, so the memoization behaviour is effectively untested.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "cache.py",
+            "lines": [
+              12
+            ],
+            "confidence": "medium (the key duplication is certain from the code; whether qty actually varies per request depends on callers outside this workspace, which i could not inspect).",
+            "what": "The cache key is the raw call spelling, not the bound arguments, so quote(\"melon\"), quote(\"melon\", 1), quote(\"melon\", qty=1) and quote(\"melon\", qty=1, currency=\"USD\") are four separate entries \u2014 and since qty is part of the key, the number of entries is not bounded by the SKU set as the change assumes.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "test_pricing.py",
+            "lines": [
+              17,
+              20
+            ],
+            "confidence": "high (test bodies are as shown; a no-op cache_clear provably passes them).",
+            "what": "test_cache_clear cannot fail for the behaviour it names \u2014 with cache_clear implemented as lambda: None (or removed entirely) the test would still pass, because it only re-checks a value that is correct whether or not the cache was emptied.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 5,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 5,
+    "agreed": true
+  },
+  {
+    "case": "pagination",
+    "variant": "bug",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0008634272000000001,
+    "seconds": 10.0,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "pager.py",
+            "lines": [
+              20
+            ],
+            "confidence": "high",
+            "what": "return total // per_page + 1 adds a page in every exact-multiple case and returns 1 page for 0 items, so the API over-reports page count and contradicts the function's own docstring.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "pager.py",
+            "lines": [
+              20
+            ],
+            "confidence": "high",
+            "what": "return total // per_page + 1 over-counts by one page for every exact multiple of per_page and returns 1 page for 0 items, so page_count(0) \u2192 1 and page_count(20) \u2192 2.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 0,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "pagination",
+    "variant": "bug",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0010359604,
+    "seconds": 11.6,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "pager.py",
+            "lines": [
+              20
+            ],
+            "confidence": "high",
+            "what": "total // per_page + 1 always adds a page, so exact multiples get one page too many and total == 0 returns 1 instead of 0.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "pager.py",
+            "lines": [
+              20
+            ],
+            "confidence": "high",
+            "what": "total // per_page + 1 adds a page even when total is an exact multiple of per_page, and returns 1 page for zero items, contradicting both the docstring and the stated requirement.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 0,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "pagination",
+    "variant": "bug",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0008490388,
+    "seconds": 9.2,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "pager.py",
+            "lines": [
+              20
+            ],
+            "confidence": "high",
+            "what": "total // per_page + 1 over-counts every input: exact multiples get an extra page, and total=0 returns 1 page instead of 0.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "pager.py",
+            "lines": [
+              20
+            ],
+            "confidence": "high",
+            "what": "return total // per_page + 1 always adds one extra page, so exact multiples are overcounted (20 items/20 per_page \u2192 2, 40 \u2192 3) and the empty case returns 1 instead of 0, contradicting the docstring and the stated requirement.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 0,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "pagination",
+    "variant": "bug",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0008287352000000001,
+    "seconds": 8.3,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "pager.py",
+            "lines": [
+              20
+            ],
+            "confidence": "high",
+            "what": "total // per_page + 1 returns one page too many for every exact multiple of per_page, and returns 1 for total == 0 instead of the documented 0.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "pager.py",
+            "lines": [
+              20
+            ],
+            "confidence": "high",
+            "what": "total // per_page + 1 adds a page even when total divides evenly by per_page, and returns 1 page for 0 items, contradicting the docstring's \"no items means 0 pages\".",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 0,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "pagination",
+    "variant": "bug",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0008468652,
+    "seconds": 9.3,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "major",
+            "path": "pager.py",
+            "lines": [
+              20
+            ],
+            "confidence": "high",
+            "what": "total // per_page + 1 always adds a page, so exact multiples over-count and 0 items returns 1 page instead of 0.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "pager.py",
+            "lines": [
+              20
+            ],
+            "confidence": "high",
+            "what": "total // per_page + 1 over-counts by one for every exact multiple of per_page, and reports 1 page when there are 0 items \u2014 directly contradicting the stated contract (\"no items means 0 pages\").",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 0,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "pagination",
+    "variant": "clean",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0016264488,
+    "seconds": 30.1,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "pagination",
+    "variant": "clean",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0018862884,
+    "seconds": 35.2,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "pager.py",
+            "lines": [
+              14,
+              20
+            ],
+            "confidence": "medium",
+            "what": "page_count validates only the sign of its arguments, so non-integer values silently produce a non-integer (or NaN) page count instead of an error, unlike paginate which fails loudly on non-integer input.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 1,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 1,
+    "agreed": false
+  },
+  {
+    "case": "pagination",
+    "variant": "clean",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.001680818,
+    "seconds": 30.4,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "pagination",
+    "variant": "clean",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0017365383999999998,
+    "seconds": 35.8,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "pagination",
+    "variant": "clean",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0012752584,
+    "seconds": 18.2,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "rename_alias",
+    "variant": "clean",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0026419204,
+    "seconds": 50.2,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "rename_alias",
+    "variant": "clean",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0038373668,
+    "seconds": 80.9,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "greet.py",
+            "lines": [
+              2
+            ],
+            "confidence": "medium",
+            "what": "The rename silently removes the greet.get_user module attribute, so any caller doing from greet import get_user / greet.get_user(...) now fails with ImportError/AttributeError instead of getting the deprecated alias the change is supposed to preserve.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 1,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 1,
+    "agreed": false
+  },
+  {
+    "case": "rename_alias",
+    "variant": "clean",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0025227732,
+    "seconds": 50.7,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "rename_alias",
+    "variant": "clean",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0033638032,
+    "seconds": 75.2,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "rename_alias",
+    "variant": "clean",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0015027959999999998,
+    "seconds": 22.0,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "retry",
+    "variant": "bug",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.001631862,
+    "seconds": 16.7,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "retry.py",
+            "lines": [
+              17,
+              24
+            ],
+            "confidence": "high",
+            "what": "When every attempt fails with a retryable error, retry() falls off the end of the for loop and implicitly returns None instead of re-raising last_error, so push() reports success with a None response after the service was unreachable 3 times.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "retry.py",
+            "lines": [
+              24
+            ],
+            "confidence": "high",
+            "what": "When every attempt raises ConnectionError, retry logs a warning and falls off the end of the function, returning None instead of raising \u2014 so push() reports success-with-None for a record that was never delivered.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 0,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "retry",
+    "variant": "bug",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0016805684,
+    "seconds": 21.0,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "retry.py",
+            "lines": [
+              24
+            ],
+            "confidence": "high",
+            "what": "When every attempt fails, retry() logs a warning and falls off the end of the function, returning None instead of re-raising the captured ConnectionError \u2014 so push() returns None to its caller on total failure.",
+            "on_bug": true
+          },
+          {
+            "severity": "major",
+            "path": "test_sync.py",
+            "lines": [
+              30,
+              51
+            ],
+            "confidence": "high",
+            "what": "Every new test exercises retry() directly, and none of them asserts what happens when all attempts are exhausted, so the swallowed error above passes the whole suite; no test even verifies that push() retries or forwards sleep.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "retry.py",
+            "lines": [
+              20,
+              24
+            ],
+            "confidence": "high",
+            "what": "When every attempt fails, retry() falls out of the loop and returns None instead of raising the last ConnectionError.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_sync.py",
+            "lines": [
+              30,
+              51
+            ],
+            "confidence": "high",
+            "what": "No test covers exhaustion or push()'s own retry behaviour, so the bug above passes the suite.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 4,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 2,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "retry",
+    "variant": "bug",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0016365304000000001,
+    "seconds": 18.1,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "retry.py",
+            "lines": [
+              24
+            ],
+            "confidence": "high",
+            "what": "When every attempt fails, retry() logs a warning and falls off the end of the function, returning None instead of re-raising last_error; push() therefore reports success with a None response and the original ConnectionError is lost.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_sync.py",
+            "lines": [
+              30,
+              51
+            ],
+            "confidence": "high",
+            "what": "No test covers the \"all attempts exhausted\" contract, so the critical bug above passes the suite.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "retry.py",
+            "lines": [
+              24
+            ],
+            "confidence": "high",
+            "what": "When all attempts fail with a retryable error, retry() falls out of the loop, logs, and returns None instead of re-raising last_error \u2014 so push() reports a successful None response to the caller and the record is silently dropped.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_sync.py",
+            "lines": [
+              30,
+              51
+            ],
+            "confidence": "high",
+            "what": "No test exercises the exhaustion path \u2014 the only failure-path tests are a non-retryable error and attempts=0, so the swallowed-exception bug above ships green.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 4,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 2,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "retry",
+    "variant": "bug",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0014509692,
+    "seconds": 22.0,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "retry.py",
+            "lines": [
+              24
+            ],
+            "confidence": "high",
+            "what": "When every attempt fails, retry falls off the end of the function and returns None instead of raising the last error, so the caller of push never sees the failure.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "retry.py",
+            "lines": [
+              24
+            ],
+            "confidence": "high",
+            "what": "When every attempt fails, retry() falls out of the loop and returns None instead of re-raising last_error, so push() reports success with a None response after the inventory service stays down.",
+            "on_bug": true
+          },
+          {
+            "severity": "major",
+            "path": "test_sync.py",
+            "lines": [
+              30,
+              46
+            ],
+            "confidence": "high",
+            "what": "No test covers the failure-exhaustion path of push()/retry(), so the missing re-raise above goes undetected; no test asserts push() propagates a non-ConnectionError from send either.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "retry",
+    "variant": "bug",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0015956852,
+    "seconds": 19.6,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "retry.py",
+            "lines": [
+              24
+            ],
+            "confidence": "high",
+            "what": "When every attempt fails with a retried error, retry() logs and falls out of the loop, returning None instead of re-raising the last error, so push() reports success with a None response after the inventory service was unreachable three times.",
+            "on_bug": true
+          },
+          {
+            "severity": "major",
+            "path": "test_sync.py",
+            "lines": [
+              25,
+              51
+            ],
+            "confidence": "high",
+            "what": "The test suite never exercises push() against a failing send, so the exact requirement \"retries exactly 3 times and then surfaces the error\" is untested and the swallowed exception above passes green.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "retry.py",
+            "lines": [
+              17,
+              24
+            ],
+            "confidence": "high",
+            "what": "When every attempt fails, retry() logs a warning and falls off the end of the function, returning None instead of re-raising the last error.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "retry",
+    "variant": "clean",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0067611372000000005,
+    "seconds": 139.3,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_sync.py",
+            "lines": [
+              25,
+              27
+            ],
+            "confidence": "high",
+            "what": "Nothing tests the behavior the change actually claims to add \u2014 no test drives push with a failing send, so push's retry count, its backoff, and its give-up-and-propagate path are entirely unverified.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 1,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 1,
+    "agreed": false
+  },
+  {
+    "case": "retry",
+    "variant": "clean",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.004513504,
+    "seconds": 72.3,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_sync.py",
+            "lines": [
+              25,
+              27
+            ],
+            "confidence": "high (the gap is directly visible in the test file; note i could not execute pytest here \u2014 no shell tool \u2014 so this is from reading the code, not a run).",
+            "what": "The change's actual subject \u2014 that push() retries 3 times with backoff and only retries ConnectionError \u2014 has no test; every retry test exercises the retry module directly, so push's wiring can regress silently.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_sync.py",
+            "lines": [
+              25,
+              27
+            ],
+            "confidence": "high",
+            "what": "Nothing tests that push itself retries \u2014 all retry behaviour is tested against the retry helper directly, and the only push test uses a send that never raises.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 2,
+    "agreed": true
+  },
+  {
+    "case": "retry",
+    "variant": "clean",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.005311075199999999,
+    "seconds": 93.2,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_sync.py",
+            "lines": [
+              25,
+              41
+            ],
+            "confidence": "high",
+            "what": "The behavior this change exists to add \u2014 push() retrying ConnectionError three times with backoff \u2014 is never exercised through push(); every retry test calls retry() directly.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_sync.py",
+            "lines": [
+              25,
+              27
+            ],
+            "confidence": "high",
+            "what": "The behavior the change exists to deliver \u2014 push() retrying on ConnectionError, backing off, and propagating other errors / the final error \u2014 is never exercised through push(); the new tests only call the generic helper retry() directly.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 2,
+    "agreed": true
+  },
+  {
+    "case": "retry",
+    "variant": "clean",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.005998636000000001,
+    "seconds": 157.7,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_sync.py",
+            "lines": [
+              25,
+              58
+            ],
+            "confidence": "high",
+            "what": "The behavior the change exists to provide \u2014 push() retrying ConnectionError up to 3 times, propagating other errors immediately, and re-raising after all attempts fail \u2014 is never exercised through push(); every new test calls retry() directly.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 1,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 1,
+    "agreed": false
+  },
+  {
+    "case": "retry",
+    "variant": "clean",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0044218324,
+    "seconds": 60.4,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_sync.py",
+            "lines": [
+              25,
+              58
+            ],
+            "confidence": "high",
+            "what": "None of the tests exercise push's retry behaviour \u2014 they only test the retry helper directly, so the contract the change exists to deliver is unverified.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_sync.py",
+            "lines": [
+              25,
+              27
+            ],
+            "confidence": "high",
+            "what": "Nothing tests push() with a failing send, so the feature the diff exists to deliver (push retrying, and push propagating the error after exhaustion) is entirely unverified.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 2,
+    "agreed": true
+  },
+  {
+    "case": "type_hints",
+    "variant": "clean",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.001915578,
+    "seconds": 32.3,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "type_hints",
+    "variant": "clean",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0023217727999999996,
+    "seconds": 40.5,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "type_hints",
+    "variant": "clean",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0026064212,
+    "seconds": 60.5,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "type_hints",
+    "variant": "clean",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0025459252,
+    "seconds": 45.1,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "type_hints",
+    "variant": "clean",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0027273028000000003,
+    "seconds": 39.9,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "upload_path",
+    "variant": "bug",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0014947192,
+    "seconds": 17.8,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "uploads.py",
+            "lines": [
+              10,
+              12
+            ],
+            "confidence": "high",
+            "what": "An absolute name (e.g. /etc/passwd, or //host/share/x, C:/x on Windows) contains no \"..\" part, so the check passes, and Path(base) / name discards base entirely and returns the absolute path \u2014 read_upload then reads any file on the host.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "uploads.py",
+            "lines": [
+              12
+            ],
+            "confidence": "high",
+            "what": "Absolute names are never rejected \u2014 Path(base) / \"/etc/passwd\" silently discards base, so read_upload(\"/etc/passwd\") still reads arbitrary files outside the upload folder.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_uploads.py",
+            "lines": [
+              19,
+              22
+            ],
+            "confidence": "high",
+            "what": "The escape tests call safe_path directly instead of the documented entry point read_upload, and no absolute-path or absolute-inside/outside-base case is covered, so the primary bypass above is invisible to the suite.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "upload_path",
+    "variant": "bug",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0015247664,
+    "seconds": 23.5,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "uploads.py",
+            "lines": [
+              10
+            ],
+            "confidence": "high",
+            "what": "The guard only rejects names whose path parts contain \"..\", so an absolute name such as /etc/passwd (or C:\\Windows\\... on Windows) still escapes base, because joining an absolute path to Path(base) discards the base entirely.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "uploads.py",
+            "lines": [
+              10,
+              12
+            ],
+            "confidence": "high",
+            "what": "An absolute name bypasses the check entirely, because Path(base) / name discards base when name is absolute \u2014 so read_upload(\"/etc/passwd\") still reads a file outside the upload folder and returns bytes instead of raising ValueError.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_uploads.py",
+            "lines": [
+              19,
+              22
+            ],
+            "confidence": "high",
+            "what": "The rejection tests call safe_path directly and never go through read_upload, so the public entry point that actually serves request URLs is untested (and read_upload's default base=UPLOAD_DIR path, the one used in production, is never exercised at all).",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "upload_path",
+    "variant": "bug",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0016026851999999998,
+    "seconds": 24.1,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "uploads.py",
+            "lines": [
+              10,
+              12
+            ],
+            "confidence": "high",
+            "what": "The check only rejects literal .. path components; an absolute name is returned unchanged because pathlib discards base when the right operand is absolute, so /etc/passwd (or //etc/passwd, %2Fetc%2Fpasswd decoded) still escapes the upload folder.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "uploads.py",
+            "lines": [
+              10,
+              12
+            ],
+            "confidence": "high",
+            "what": "The check only rejects a literal .. path component; any absolute name (e.g. /etc/passwd, C:\\Windows\\win.ini, a UNC path, or a Windows drive-relative path like C:secret) has no .. part and Path(base) / name silently discards base, so the caller still reads a file outside the upload folder.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_uploads.py",
+            "lines": [
+              19,
+              22
+            ],
+            "confidence": "high",
+            "what": "The new tests assert rejection by calling safe_path directly, and only with relative names, so they neither cover the public read_upload entry point nor the absolute-path case that actually bypasses the guard \u2014 the suite is green while the hole is open.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "upload_path",
+    "variant": "bug",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0016713268,
+    "seconds": 35.0,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "uploads.py",
+            "lines": [
+              10,
+              12
+            ],
+            "confidence": "high",
+            "what": "The guard only rejects .. components, so an absolute name such as /etc/passwd (or //etc/passwd, or C:/Windows/win.ini on Windows) silently discards base and reads a file outside the upload folder.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_uploads.py",
+            "lines": [
+              19,
+              22
+            ],
+            "confidence": "high",
+            "what": "The new test only parametrizes relative escapes and calls safe_path directly, so the absolute-path bypass above and read_upload's propagation of the error are both untested.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "uploads.py",
+            "lines": [
+              10,
+              12
+            ],
+            "confidence": "high",
+            "what": "The guard only rejects names containing a .. part, so an absolute name (e.g. /etc/passwd) is joined straight onto base and escapes the upload folder without raising ValueError.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_uploads.py",
+            "lines": [
+              19,
+              22
+            ],
+            "confidence": "high",
+            "what": "The new tests only exercise safe_path and only with relative .. inputs; there is no test for an absolute name, for read_upload itself rejecting a bad name, or for a legitimate nested name (sub/cat.png) still working.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 4,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 2,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "upload_path",
+    "variant": "bug",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0014510259999999998,
+    "seconds": 22.8,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "uploads.py",
+            "lines": [
+              10,
+              12
+            ],
+            "confidence": "high",
+            "what": "The guard only blocks .. components; an absolute name such as /etc/passwd or a Windows drive/UNC path is accepted, and Path(base) / name discards base entirely, so read_upload still reads any file on the filesystem.",
+            "on_bug": true
+          }
+        ],
+        "caught": true
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "critical",
+            "path": "uploads.py",
+            "lines": [
+              10,
+              12
+            ],
+            "confidence": "high",
+            "what": "An absolute name bypasses the guard entirely, because Path(base) / name discards base when name is absolute, so /etc/passwd (or C:\\Windows\\win.ini on Windows) is read from outside the upload folder with no ValueError.",
+            "on_bug": true
+          },
+          {
+            "severity": "minor",
+            "path": "test_uploads.py",
+            "lines": [
+              19,
+              22
+            ],
+            "confidence": "high",
+            "what": "The new tests call safe_path directly and cover only relative .. names, so read_upload's rejection behavior and absolute/host-path escapes are untested \u2014 the critical gap above passes CI.",
+            "on_bug": false
+          }
+        ],
+        "caught": true
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": true,
+    "other_findings": 1,
+    "caught": true,
+    "caught_serious": true,
+    "lenses_caught": 2,
+    "agreed": true
+  },
+  {
+    "case": "upload_path",
+    "variant": "clean",
+    "rep": 1,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.005983049200000001,
+    "seconds": 134.8,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_uploads.py",
+            "lines": [
+              19,
+              32
+            ],
+            "confidence": "high",
+            "what": "Every rejection test calls the new helper safe_path directly; not one test calls read_upload with a traversal name, so the request-facing function the change is actually meant to harden is unguarded by the suite.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 1,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 1,
+    "agreed": false
+  },
+  {
+    "case": "upload_path",
+    "variant": "clean",
+    "rep": 2,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.003946829999999999,
+    "seconds": 81.5,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_uploads.py",
+            "lines": [
+              19,
+              32
+            ],
+            "confidence": "high",
+            "what": "The security fix is only tested at the helper level; no test proves that read_upload \u2014 the function that actually takes the request-supplied name \u2014 rejects an escaping name, and the symlink case the docstring advertises is not tested at all.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 1,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 1,
+    "agreed": false
+  },
+  {
+    "case": "upload_path",
+    "variant": "clean",
+    "rep": 3,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.008335381599999999,
+    "seconds": 220.8,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_uploads.py",
+            "lines": [
+              19,
+              32
+            ],
+            "confidence": "high",
+            "what": "All three traversal tests call safe_path directly; none exercise read_upload, the function that actually contained the vulnerability.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "uploads.py",
+            "lines": [
+              19
+            ],
+            "confidence": "high",
+            "what": "safe_path only rejects paths that are outside base or equal to it, so a request-supplied name that resolves to a *directory inside* the upload folder passes validation and read_upload then raises IsADirectoryError instead of ValueError.",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "test_uploads.py",
+            "lines": [
+              19,
+              32
+            ],
+            "confidence": "high",
+            "what": "Every rejection test calls safe_path directly, so the tests would still pass if read_upload (the documented request-URL entry point named in the task) stopped calling it.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 3,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 3,
+    "agreed": true
+  },
+  {
+    "case": "upload_path",
+    "variant": "clean",
+    "rep": 4,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0053074943999999995,
+    "seconds": 120.5,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      }
+    ],
+    "findings": 0,
+    "flagged": false,
+    "serious": false,
+    "other_findings": 0,
+    "agreed": false
+  },
+  {
+    "case": "upload_path",
+    "variant": "clean",
+    "rep": 5,
+    "error": "",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "thinking": "low",
+    "cost": 0.0036703364000000003,
+    "seconds": 68.0,
+    "lenses": [
+      {
+        "lens": "correctness and logic bugs",
+        "status": "completed",
+        "verdict": "approve",
+        "findings": [],
+        "caught": null
+      },
+      {
+        "lens": "edge cases, error handling and missing tests",
+        "status": "completed",
+        "verdict": "needs-attention",
+        "findings": [
+          {
+            "severity": "minor",
+            "path": "test_uploads.py",
+            "lines": [
+              19,
+              32
+            ],
+            "confidence": "high",
+            "what": "Every rejection case tests safe_path directly, so the fix's actual contract (read_upload must raise ValueError for escaping names) is not pinned by any test \u2014 only the happy path calls read_upload (line 16).",
+            "on_bug": false
+          },
+          {
+            "severity": "minor",
+            "path": "uploads.py",
+            "lines": [
+              12,
+              14
+            ],
+            "confidence": "medium",
+            "what": "A name that resolves to a subdirectory inside base (e.g. \"sub\") passes the check and is returned, then read_upload raises IsADirectoryError/NotADirectoryError instead of the documented ValueError.",
+            "on_bug": false
+          }
+        ],
+        "caught": null
+      }
+    ],
+    "findings": 2,
+    "flagged": true,
+    "serious": false,
+    "other_findings": 2,
+    "agreed": false
+  }
+]

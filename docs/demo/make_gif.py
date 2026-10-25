@@ -18,9 +18,9 @@ HERE = Path(__file__).resolve().parent
 ICON = HERE.parent.parent / ".claude-plugin" / "icon.png"
 OUT = HERE / "review.gif"
 
-# From bench/results/2026-10-24-review-after-fix (bench/review_eval.py --repeats 5).
-STATS = [("30/30", "planted bugs caught"), ("32/39", "clean diffs with no major flag"),
-         ("$0.0047", "mean cost per review")]
+# From bench/results/2026-10-24-review-low-cap180 (bench/review_eval.py --repeats 5).
+STATS = [("30/30", "planted bugs caught"), ("30/40", "clean diffs with no major flag"),
+         ("28 s", "median review of a bug")]
 
 W, H = 1200, 780
 MARGIN, RADIUS, TITLE_H = 28, 16, 46

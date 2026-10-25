@@ -31,12 +31,18 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **Each `review` and `consult` lens is capped.** A lens stops after `DEPUTY_LENS_TIMEOUT` seconds
-  (default 300) or `DEPUTY_LENS_MAX_OUTPUT_TOKENS` output tokens, thinking included (default
-  32,000), then writes up what it already checked in one short call without tools and with
-  light thinking. Its section says it stopped early and ends with `NOT CHECKED:`; a reviewer
-  reports only problems it confirmed and lists open suspicions there. In the benchmark one reviewer
-  thought for 73k tokens and 23 minutes; the others took 90–242 s.
+- **Reviews are much faster.** In the review benchmark the median review took 28 s on a change
+  with a bug (was 45 s) and 80 s on a clean change (was 160 s), and the slowest took 230 s (was
+  23 minutes). Every planted bug was still caught; false alarms stayed within run-to-run noise.
+  Two changes do this:
+  - `review` and `consult` think at `low` by default (`DEPUTY_LENS_THINKING`). The worker
+    (`delegate`, `investigate`) keeps `DEPUTY_THINKING`, `high` by default. Claude can pass
+    `thinking="high"` for an especially risky change.
+  - Each lens is capped. It stops after `DEPUTY_LENS_TIMEOUT` seconds (default 180) or
+    `DEPUTY_LENS_MAX_OUTPUT_TOKENS` output tokens, thinking included (default 32,000), then writes
+    up what it already checked in one short call without tools and with light thinking. Its
+    section says it stopped early and ends with `NOT CHECKED:`; a reviewer reports only problems
+    it confirmed and lists open suspicions there.
 - **Claude calls `review` and `consult` less often.** Every mode, the playbooks and the skill
   descriptions now say to review only risky or large changes (tricky logic, security or untrusted
   input, data, concurrency, money, many files) and to consult only when unsure between

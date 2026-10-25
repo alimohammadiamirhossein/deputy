@@ -74,27 +74,29 @@ What this shows, and what it doesn't:
 ### Does `review` catch bugs, and how often does it cry wolf?
 
 Deputy's `review` on its own, without Claude, on 6 changes with a planted bug and 8 clean changes.
-Each planted bug has a clean twin, the same change done right. Five runs each
-([bench/review_cases](https://github.com/alimohammadiamirhossein/deputy/tree/main/bench/review_cases)):
+Each planted bug has a clean twin, the same change done right. Five runs each with the default
+settings ([bench/review_cases](https://github.com/alimohammadiamirhossein/deputy/tree/main/bench/review_cases)):
 
-| Diffs | Reviews | Flagged | Flagged major or critical | Mean cost | Mean time |
-|---|---|---|---|---|---|
-| Planted bug | 30 | **30/30 caught** | 30/30 | $0.0022 | 55 s |
-| Clean | 39 | 23/39 | 7/39 | $0.0067 | 4 min |
+| Diffs | Reviews | Flagged | Flagged major or critical | Mean cost | Median time | Slowest |
+|---|---|---|---|---|---|---|
+| Planted bug | 30 | **30/30 caught** | 30/30 | $0.0016 | 28 s | 59 s |
+| Clean | 40 | 22/40 | 10/40 | $0.0039 | 80 s | 230 s |
 
 - **Every planted bug was caught,** at major or critical severity, by both reviewers every time.
-- **Clean code still draws findings,** so Claude has to check each one. Most are minor (50 of
-  61), and 18% of clean reviews included a major claim.
+- **Reviews are quick.** Reviewers think at `low` and stop after 180 s. With `high` thinking and no
+  cap they caught the same bugs, but the median clean review took 160 s and the slowest 23 minutes.
+- **Clean code still draws findings,** so Claude has to check each one. Most are minor (36 of
+  50), but a quarter of clean reviews included a major claim.
 - **Many of those findings are fair,** such as a test that can't fail, an entry point no test
-  covers, or a cache key wider than the change assumed (5 of the 7 major claims).
+  covers, or a cache key wider than the change assumed.
 - **The benchmark already fixed one cause of false alarms.** In the first run, reviewers read new
   files labelled "(untracked)" as left out of the change. Deputy now shows them as `git diff`
-  does. Those findings went from 6 to 0, and clean reviews with a major claim from 11/39 to 7/39
-  (part of that drop is run-to-run noise).
-- **Agreement is weak evidence on clean code.** Both reviewers flagged the same spot on 26% of
+  does, and those findings went from 6 to 0.
+- **Agreement is weak evidence on clean code.** Both reviewers flagged the same spot on 20% of
   clean diffs, so a finding isn't real just because two reviewers report it.
 - Every finding on a clean diff is listed in the results:
-  [latest run](https://github.com/alimohammadiamirhossein/deputy/blob/main/bench/results/2026-10-24-review-after-fix/results.md),
+  [default settings](https://github.com/alimohammadiamirhossein/deputy/blob/main/bench/results/2026-10-24-review-low-cap180/results.md),
+  [`high` thinking, no cap](https://github.com/alimohammadiamirhossein/deputy/blob/main/bench/results/2026-10-24-review-after-fix/results.md),
   [first run](https://github.com/alimohammadiamirhossein/deputy/blob/main/bench/results/2026-10-24-review/results.md).
 
 ## What it does
@@ -227,6 +229,9 @@ It's the best price-to-quality option we found for this job:
 - **Capable:** about 1M tokens of context and reliable tool calling.
 - **Thinking actually on:** DeepInfra leaves its thinking **off** unless asked. Deputy always asks
   (`high`), which we confirmed by measuring the reasoning tokens.
+- **Quick reviews:** `review` and `consult` think at `low` by default. In the review benchmark it
+  caught the same planted bugs as `high` in less than half the time. Set
+  `DEPUTY_LENS_THINKING=high` for deeper, slower reviews.
 - **Private:** DeepInfra says it doesn't train on your data. Your code isn't sent to DeepSeek's
   own servers.
 
