@@ -416,8 +416,7 @@ def _wrap_up(client: Any, settings: Settings, messages: list[dict], tool_schemas
     """Ask a run that stopped early for its final message. Returns None if that fails too."""
     reason = WRAP_UP_REASONS.get(status, "limit")
     messages.append({"role": "user", "content": prompt.format(reason=reason)})
-    request = build_request(settings, WRAP_UP_EFFORT, messages, tool_schemas)
-    request["max_tokens"] = WRAP_UP_TOKENS
+    request = build_request(settings, WRAP_UP_EFFORT, messages, tool_schemas, WRAP_UP_TOKENS)
     if tool_schemas:
         request["tool_choice"] = "none"
     try:

@@ -82,6 +82,15 @@ def test_output_budget_shrinks_each_request_then_wraps_up(project: Path):
     assert "Only CONFIRMED points are findings" in prompt and "NOT CHECKED:" in prompt
 
 
+def test_xai_budget_uses_max_completion_tokens(project: Path):
+    client = FakeClient([list_files(completion=3_000), list_files(completion=1_900),
+                         reply("VERDICT: approve\nNOT CHECKED: none")])
+    run_agent("review it", capped(project, DEPUTY_PROVIDER="xai"), client, mode="review",
+              output_limit=5_000, wrap_up=True)
+    assert [r["max_completion_tokens"] for r in client.requests] == [5_000, 2_000, WRAP_UP_TOKENS]
+    assert not any("max_tokens" in r for r in client.requests)
+
+
 def test_consult_wrap_up_keeps_the_plain_prompt(project: Path):
     client = FakeClient([list_files(completion=950), reply("1. IDEA: cache it")])
     run_agent("ideas?", capped(project), client, mode="consult", output_limit=1_000, wrap_up=True)
