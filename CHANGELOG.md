@@ -3,6 +3,24 @@
 All notable changes to Deputy. The format follows [Keep a Changelog](https://keepachangelog.com/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **Cancelling a call stops the run.** Before, pressing Esc left the run going, and a cancelled
+  `delegate` released its lock while it kept editing files, so a second `delegate` could edit
+  the same files at the same time. Runs now stop before their next model turn or tool call, and
+  `delegate` takes a new task only after the old one has really stopped.
+- **`project_dir` works with the Claude Code plugin.** The plugin pinned the workspace with
+  `DEPUTY_WORKSPACE`, so Deputy ignored `project_dir` and MCP roots. It now passes the project
+  folder as `CLAUDE_PROJECT_DIR`, which `project_dir` can override. Deputy also refuses to work
+  inside Claude Code's plugin folder.
+
+### Added
+
+- Progress notifications during long calls: each turn and tool call (for example "bugs: turn 2,
+  read_file"), so clients that show progress can tell a slow call from a stuck one.
+
 ## [0.3.0] - 2026-10-25
 
 ### Added

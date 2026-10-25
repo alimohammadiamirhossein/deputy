@@ -31,7 +31,8 @@ Everything that is not in the [README](../README.md). For how Claude should use 
 - Every tool except `stats` also takes `project_dir`: the project's absolute path, for clients
   that start Deputy outside the project. Deputy picks the folder in this order: `DEPUTY_WORKSPACE`,
   `project_dir`, the client's MCP root (Cursor and others report it), Claude Code's project
-  folder, then the current directory.
+  folder, then the current directory. The Claude Code plugin passes the project folder as
+  `CLAUDE_PROJECT_DIR`, so `project_dir` can still override it.
 - `thinking` is `high` or `max`. Without it, `delegate` and `investigate` use `DEPUTY_THINKING`
   (default `high`), and `review` and `consult` use `DEPUTY_LENS_THINKING` (default `low`, which
   caught the same planted bugs as `high` in the review benchmark in less than half the time).
@@ -44,6 +45,9 @@ Everything that is not in the [README](../README.md). For how Claude should use 
   ends with a `NOT CHECKED:` line. A reviewer stopped this way reports only problems it
   confirmed and lists open suspicions under `NOT CHECKED:` instead.
 - `my_view` is never sent to the model; it is echoed back so Claude can compare honestly.
+- Cancelling a call stops the run before its next model turn or tool call; a request already
+  sent to the model finishes first. `delegate` takes a new task only after a cancelled one has
+  stopped. Every tool sends MCP progress notifications at each turn and tool call.
 
 Plugin slash commands: `/deputy:consult`, `/deputy:review`, `/deputy:investigate`,
 `/deputy:delegate`.
