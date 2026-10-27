@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "deputy-cc"
-version = "0.3.0"
+version = "0.3.1"
 description = "Claude Code plugin and MCP server that has a cheap model, DeepSeek V4.1 Flash, review Claude's code for bugs and give second opinions, for under a cent each. Claude keeps writing the code."
 readme = "README.md"
 requires-python = ">=3.10"

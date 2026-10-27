@@ -3,7 +3,7 @@
 All notable changes to Deputy. The format follows [Keep a Changelog](https://keepachangelog.com/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.3.1] - 2026-10-27
 
 ### Added
 
@@ -133,6 +133,7 @@ and versions follow [Semantic Versioning](https://semver.org/).
   and time.
 - `deputy doctor` to check the key, the endpoint and that thinking is on.
 
+[0.3.1]: https://github.com/alimohammadiamirhossein/deputy/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/alimohammadiamirhossein/deputy/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/alimohammadiamirhossein/deputy/compare/2347242...v0.2.0
 [0.1.0]: https://github.com/alimohammadiamirhossein/deputy/commit/2347242
