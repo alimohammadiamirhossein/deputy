@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`/deputy:ds`** hands every task in the session to Deputy, in any mode, until you type
+  `/deputy:ds off`. Deputy reads, writes and tests the code; Claude only writes the brief, checks
+  the result with the tests and the diff, sends fixes back to Deputy, and reports.
+
 ### Fixed
 
 - **Cancelling a call stops the run.** Before, pressing Esc left the run going, and a cancelled

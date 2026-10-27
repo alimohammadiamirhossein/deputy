@@ -9,7 +9,7 @@ You are the lead. Deputy is a cheaper, weaker model that you can call for extra 
 extra eyes. Use it to be **more accurate**, never to skip your own judgment.
 
 > Using the Claude Code plugin? You already have this as `/deputy:consult`, `/deputy:review`,
-> `/deputy:investigate` and `/deputy:delegate`. Without the plugin, copy this file to
+> `/deputy:investigate`, `/deputy:delegate` and `/deputy:ds`. Without the plugin, copy this file to
 > `~/.claude/skills/deputy/SKILL.md`. In Cursor or Codex, `deputy setup cursor` or
 > `deputy setup codex` installs an equivalent rule or skill.
 

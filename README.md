@@ -181,6 +181,7 @@ Claude Code asks for your DeepInfra key and stores it in your system's secure st
 /deputy:review
 /deputy:consult I plan to cache sessions in Redis. What am I missing?
 /deputy:investigate how does a request reach the database?
+/deputy:ds add input validation to the signup form, with tests
 ```
 
 Or just work normally: Claude calls Deputy on its own when it pays off, and skips reviews on

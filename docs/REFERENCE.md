@@ -50,7 +50,9 @@ Everything that is not in the [README](../README.md). For how Claude should use 
   stopped. Every tool sends MCP progress notifications at each turn and tool call.
 
 Plugin slash commands: `/deputy:consult`, `/deputy:review`, `/deputy:investigate`,
-`/deputy:delegate`.
+`/deputy:delegate`, and `/deputy:ds`, which hands every task in the session to Deputy in any mode
+until you type `/deputy:ds off`: Deputy reads, writes and tests, and Claude only writes the brief,
+checks the result and reports. Run it with a task, or alone to switch it on.
 
 ## Modes
 
